@@ -7,8 +7,11 @@ from fastapi import FastAPI
 
 from routers import chat
 from services import llm
+from repositories import chroma
 
 load_dotenv(".env")
+
+chroma.init_chroma(path=os.getenv("CHROMA_PATH", os.getenv("CHROMA_PATH")))
 
 llm.init_client(
     api_key=os.getenv("OPENAI_API_KEY"),
