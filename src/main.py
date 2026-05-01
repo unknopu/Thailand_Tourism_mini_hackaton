@@ -56,6 +56,7 @@ class ChatRequest(BaseModel):
     message: str = ""
     conversation_id: Optional[str] = None
     user_profile: UserProfile = UserProfile()
+    conversation_history: List[dict] = [] 
 
 
 class PlaceRecommendation(BaseModel):
@@ -79,6 +80,7 @@ class RecommendationResponse(BaseModel):
     recommendations: List[PlaceRecommendation]
     ai_reason: str                         # AI response in Thai
     suggested_prompts: List[str] = []
+    assistant_message: str = ""   #  เพิ่ม — ให้ frontend เก็บลง history
 
 
 # =============================================================================
@@ -149,7 +151,8 @@ def get_travel_recommendations(request: ChatRequest):
         ai_explanation = generate_ai_reasons(
             places=top_places,
             user_profile=profile_dict,
-            message=request.message
+            message=request.message,
+            conversation_history=request.conversation_history  #
         )
 
         # Generate follow-up prompt buttons
@@ -178,6 +181,7 @@ def get_travel_recommendations(request: ChatRequest):
             message=request.message,
             recommendations=formatted,
             ai_reason=ai_explanation,
+            assistant_message=ai_explanation,
             suggested_prompts=suggested_prompts,
         )
 
