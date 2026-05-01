@@ -3,7 +3,7 @@
    API base: /api/v1  (proxied through Nginx on port 8000)
 ═══════════════════════════════════════════════════════ */
 
-const API_BASE = '/api/v1';
+const API_BASE = 'http://localhost:8000/api/v1';
 
 /* ─── Profile options (keys must stay as-is — backend contract) ─── */
 const PROFILE_OPTIONS = {

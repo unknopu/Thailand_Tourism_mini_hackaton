@@ -7,6 +7,6 @@ COPY nginx.conf /etc/nginx/conf.d/app.conf
 # Copy static files (overridden by the volume mount in docker-compose for development)
 COPY . /usr/share/nginx/html
 
-EXPOSE 8000
+EXPOSE 80
 
 CMD ["nginx", "-g", "daemon off;"]
