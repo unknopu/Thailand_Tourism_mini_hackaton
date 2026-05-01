@@ -176,7 +176,12 @@ def get_recommendations(user_profile: dict, message: str = "", top_k: int = 3) -
 # Step 3: AI Generation
 # =============================================================================
 
-def generate_ai_reasons(places: list, user_profile: dict, message: str = "") -> str:
+def generate_ai_reasons(
+    places: list,
+    user_profile: dict,
+    message: str = "",
+    conversation_history: list = []   # 🌟 เพิ่มตรงนี้
+) -> str:
     if not places:
         return "Sorry, I couldn't find any new places matching your criteria."
 
@@ -201,7 +206,8 @@ def generate_ai_reasons(places: list, user_profile: dict, message: str = "") -> 
         "Answer the user's question first, then explain why the recommended places fit."
     )
 
-    user_prompt = (
+    # 🌟 Build messages: history + new turn
+    user_turn_content = (
         f"User's message: \"{message}\"\n\n"
         f"User profile: {user_profile}\n"
         f"{saved_context}\n\n"
@@ -210,19 +216,19 @@ def generate_ai_reasons(places: list, user_profile: dict, message: str = "") -> 
         "Keep it to 3–4 sentences max, friendly and natural."
     )
 
+    messages = [{"role": "system", "content": system_prompt}]
+    messages += conversation_history          # ← inject history
+    messages.append({"role": "user", "content": user_turn_content})
+
     try:
         chat_completion = groq_client.chat.completions.create(
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt},
-            ],
+            messages=messages,
             model="llama-3.3-70b-versatile",
             temperature=0.7,
         )
         return chat_completion.choices[0].message.content
     except Exception as e:
         return f"Sorry, something went wrong while generating a response."
-
 
 # =============================================================================
 # Step 4: Generate Suggested Follow-up Prompts
