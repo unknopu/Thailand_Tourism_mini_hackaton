@@ -193,7 +193,24 @@ def get_recommendations(user_profile: dict, message: str = "", top_k: int = 5) -
 # Step 3: AI Generation — answer message + explain recommendations
 # =============================================================================
 
-def generate_ai_reasons(places: list, user_profile: dict, message: str = "") -> str:
+def _build_system_prompt(nickname: str | None) -> str:
+    if nickname:
+        return (
+            f"Your name is {nickname}. You are a friendly and knowledgeable Thailand travel guide. "
+            "Always refer to yourself by this name if asked. "
+            "Always respond in English. Keep answers short, natural, and conversational — "
+            "like a well-travelled friend giving advice. "
+            "If the user asks a specific question, answer it first, then introduce the recommended places."
+        )
+    return (
+        "You are a friendly and knowledgeable Thailand travel guide. "
+        "Always respond in English. Keep answers short, natural, and conversational — "
+        "like a well-travelled friend giving advice. "
+        "If the user asks a specific question, answer it first, then introduce the recommended places."
+    )
+
+
+def generate_ai_reasons(places: list, user_profile: dict, message: str = "", nickname: str | None = None) -> str:
     """
     Send top places + user message to Groq (LLaMA 3.3).
     AI will:
@@ -223,13 +240,7 @@ def generate_ai_reasons(places: list, user_profile: dict, message: str = "") -> 
             "Do NOT re-recommend these. Focus on new discoveries."
         )
 
-    # AI จะตอบเป็นภาษาอังกฤษ เพราะแอปนี้สำหรับนักท่องเที่ยวต่างชาติ
-    system_prompt = (
-        "You are a friendly and knowledgeable Thailand travel guide. "
-        "Always respond in English. Keep answers short, natural, and conversational — "
-        "like a well-travelled friend giving advice. "
-        "If the user asks a specific question, answer it first, then introduce the recommended places."
-    )
+    system_prompt = _build_system_prompt(nickname)
 
     user_prompt = (
         f"User's message: \"{message}\"\n\n"
@@ -255,7 +266,7 @@ def generate_ai_reasons(places: list, user_profile: dict, message: str = "") -> 
         return f"Sorry, something went wrong while generating a response: {str(e)}"
 
 
-def generate_ai_reasons_stream(places: list, user_profile: dict, message: str = ""):
+def generate_ai_reasons_stream(places: list, user_profile: dict, message: str = "", nickname: str | None = None):
     """
     Same as generate_ai_reasons but streams token-by-token via SSE.
     Yields text chunks as they arrive from the LLM.
@@ -281,12 +292,7 @@ def generate_ai_reasons_stream(places: list, user_profile: dict, message: str = 
             "Do NOT re-recommend these. Focus on new discoveries."
         )
 
-    system_prompt = (
-        "You are a friendly and knowledgeable Thailand travel guide. "
-        "Always respond in English. Keep answers short, natural, and conversational — "
-        "like a well-travelled friend giving advice. "
-        "If the user asks a specific question, answer it first, then introduce the recommended places."
-    )
+    system_prompt = _build_system_prompt(nickname)
 
     user_prompt = (
         f"User's message: \"{message}\"\n\n"

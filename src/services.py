@@ -4,7 +4,22 @@ from src.repository import (
     get_conversation_history,
     delete_conversation_history,
     get_all_conversations,
+    save_conversation_nickname,
+    get_conversation_nickname,
 )
+
+
+def _resolve_nickname(conversation_id: str | None, nickname: str | None) -> str | None:
+    """
+    Persist a new nickname when provided, then return the active nickname for
+    this conversation (falls back to the stored value if not sent this turn).
+    """
+    if not conversation_id:
+        return nickname
+    if nickname:
+        save_conversation_nickname(conversation_id, nickname)
+        return nickname
+    return get_conversation_nickname(conversation_id)
 
 
 def get_travel_recommendations(
@@ -12,16 +27,20 @@ def get_travel_recommendations(
     message: str = "",
     top_k: int = 3,
     conversation_id: str = None,
+    nickname: str | None = None,
 ):
     """
     Orchestrates the full recommendation flow:
-    1. Retrieve top matching places from ChromaDB
-    2. Generate AI explanation via Groq
-    3. Generate follow-up prompt suggestions
-    4. Persist user message + AI reply to chat history (if conversation_id given)
+    1. Resolve / persist nickname for this conversation
+    2. Retrieve top matching places from ChromaDB
+    3. Generate AI explanation via Groq (with nickname in system prompt)
+    4. Generate follow-up prompt suggestions
+    5. Persist user message + AI reply to chat history (if conversation_id given)
 
     Returns (top_places, ai_reason, suggested_prompts)
     """
+    active_nickname = _resolve_nickname(conversation_id, nickname)
+
     top_places = get_recommendations(
         user_profile=profile_dict,
         message=message,
@@ -32,6 +51,7 @@ def get_travel_recommendations(
         places=top_places,
         user_profile=profile_dict,
         message=message,
+        nickname=active_nickname,
     )
 
     suggested_prompts = generate_suggested_prompts(top_places, profile_dict)
@@ -48,6 +68,7 @@ def get_travel_recommendations_stream(
     message: str = "",
     top_k: int = 3,
     conversation_id: str = None,
+    nickname: str | None = None,
 ):
     """
     Streaming variant — returns places + suggested_prompts immediately,
@@ -58,6 +79,8 @@ def get_travel_recommendations_stream(
 
     Returns (top_places, suggested_prompts, ai_chunk_generator)
     """
+    active_nickname = _resolve_nickname(conversation_id, nickname)
+
     top_places = get_recommendations(
         user_profile=profile_dict,
         message=message,
@@ -73,6 +96,7 @@ def get_travel_recommendations_stream(
         places=top_places,
         user_profile=profile_dict,
         message=message,
+        nickname=active_nickname,
     )
 
     return top_places, suggested_prompts, ai_stream

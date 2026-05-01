@@ -16,6 +16,7 @@ class UserProfile(BaseModel):
 class ChatRequest(BaseModel):
     message: str = ""
     conversation_id: Optional[str] = None
+    nickname: Optional[str] = None
     user_profile: UserProfile = UserProfile()
 
 

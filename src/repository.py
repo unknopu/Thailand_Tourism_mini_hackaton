@@ -6,12 +6,14 @@ from chromadb.config import Settings
 
 CHROMA_DB_PATH = "chroma_db"
 HISTORY_COLLECTION_NAME = "chat_history"
+PROFILES_COLLECTION_NAME = "conversation_profiles"
 
 _client = chromadb.PersistentClient(
     path=CHROMA_DB_PATH,
     settings=Settings(anonymized_telemetry=False),
 )
 history_collection = _client.get_or_create_collection(name=HISTORY_COLLECTION_NAME)
+profiles_collection = _client.get_or_create_collection(name=PROFILES_COLLECTION_NAME)
 
 
 # =============================================================================
@@ -64,6 +66,33 @@ def delete_conversation_history(conversation_id: str) -> int:
     if ids:
         history_collection.delete(ids=ids)
     return len(ids)
+
+
+# =============================================================================
+# Conversation Profile Repository (nickname, etc.)
+# =============================================================================
+
+def save_conversation_nickname(conversation_id: str, nickname: str) -> None:
+    """Upsert the nickname for a conversation (one record per conversation_id)."""
+    profiles_collection.upsert(
+        ids=[conversation_id],
+        documents=[nickname],
+        metadatas=[{"conversation_id": conversation_id, "nickname": nickname}],
+    )
+
+
+def get_conversation_nickname(conversation_id: str) -> str | None:
+    """Return the stored nickname for a conversation, or None if not set."""
+    try:
+        result = profiles_collection.get(
+            ids=[conversation_id],
+            include=["documents"],
+        )
+        if result["ids"]:
+            return result["documents"][0]
+        return None
+    except Exception:
+        return None
 
 
 def get_all_conversations() -> list:

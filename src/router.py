@@ -48,6 +48,7 @@ def recommend(request: ChatRequest):
             profile_dict=profile_dict,
             message=request.message,
             conversation_id=request.conversation_id,
+            nickname=request.nickname,
         )
 
         if not top_places:
@@ -105,6 +106,7 @@ def recommend_stream(request: ChatRequest):
             profile_dict=profile_dict,
             message=request.message,
             conversation_id=request.conversation_id,
+            nickname=request.nickname,
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
