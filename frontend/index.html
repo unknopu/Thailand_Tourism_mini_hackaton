@@ -3,9 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>MiniChat AI</title>
+  <title>GuidyTH</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
   <link rel="stylesheet" href="css/style.css" />
-  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="js/marked.min.js"></script>
 </head>
 <body>
 
@@ -13,15 +17,13 @@
   <aside class="sidebar" id="sidebar">
 
     <div class="sidebar-top">
-      <div class="logo-row">
-        <img src="assets/logo.svg" alt="MiniChat" class="sidebar-logo" />
-        <span class="sidebar-brand">MiniChat</span>
+      <div class="logo-area">
+        <img src="assets/logo.svg" alt="GuidyTH" class="sidebar-logo" />
+        <span class="sidebar-brand">GuidyTH</span>
       </div>
       <button class="new-chat-btn" id="newChatBtn" title="New chat">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M12 5v14M5 12h14"/>
-        </svg>
-        New chat
+        <i data-lucide="plus"></i>
+        New Chat
       </button>
     </div>
 
@@ -33,28 +35,25 @@
 
   </aside>
 
+  <!-- Mobile / Tablet backdrop -->
+  <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
   <!-- ════════════ MAIN ════════════ -->
   <main class="main" id="main">
 
     <!-- Top bar -->
     <header class="chat-header">
       <button class="sidebar-toggle" id="sidebarToggle" title="Toggle sidebar">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
-        </svg>
+        <i data-lucide="panel-left"></i>
       </button>
       <span class="chat-title-text" id="chatTitleText">New Chat</span>
       <button class="edit-profile-btn" id="editProfileBtn" title="Edit your travel profile">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
-        </svg>
-        โปรไฟล์
+        <i data-lucide="user-round"></i>
+        <span class="btn-label">Profile</span>
       </button>
       <button class="delete-history-btn" id="deleteHistoryBtn" title="Delete chat history" style="display:none">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
-        </svg>
-        Delete History
+        <i data-lucide="trash-2"></i>
+        <span class="btn-label">Delete</span>
       </button>
     </header>
 
@@ -63,9 +62,11 @@
 
       <!-- Welcome screen -->
       <div class="welcome-screen" id="welcomeScreen">
-        <img src="assets/logo.svg" alt="MiniChat" class="welcome-logo" />
-        <h1 class="welcome-title">What can I help with?</h1>
-        <p class="welcome-sub">Ask me anything. I'll do my best.</p>
+        <div class="welcome-icon">
+          <i data-lucide="compass"></i>
+        </div>
+        <h1 class="welcome-title">Where do you want to go?</h1>
+        <p class="welcome-sub">Tell Guidy your dream destination.</p>
       </div>
 
     </section>
@@ -76,16 +77,14 @@
         <textarea
           id="messageInput"
           class="message-input"
-          placeholder="Message MiniChat…"
+          placeholder="Ask Guidy…"
           rows="1"
         ></textarea>
         <button class="send-btn" id="sendBtn" disabled>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
-          </svg>
+          <i data-lucide="send"></i>
         </button>
       </div>
-      <p class="disclaimer">MiniChat can make mistakes. Verify important info.</p>
+      <p class="disclaimer">GuidyTH may make mistakes. Always verify travel info.</p>
     </footer>
 
   </main>
@@ -94,9 +93,7 @@
   <div class="modal-backdrop" id="modalBackdrop">
     <div class="modal">
       <div class="modal-icon">
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
-        </svg>
+        <i data-lucide="trash-2"></i>
       </div>
       <h2 class="modal-title">Delete chat history?</h2>
       <p class="modal-body">This will permanently remove all messages in this conversation. This action cannot be undone.</p>
@@ -112,34 +109,28 @@
     <div class="profile-modal">
       <div class="profile-modal-header">
         <div class="profile-modal-icon">
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
-          </svg>
+          <i data-lucide="map"></i>
         </div>
-        <h2 class="profile-modal-title">บอกเราเกี่ยวกับคุณ</h2>
-        <p class="profile-modal-sub">เลือกความชอบเพื่อรับคำแนะนำการท่องเที่ยวที่ตรงใจ</p>
+        <h2 class="profile-modal-title">Tell us about you</h2>
+        <p class="profile-modal-sub">Pick your preferences for personalised travel recommendations.</p>
       </div>
       <div class="profile-modal-body">
         <div class="profile-section">
-          <div class="profile-section-label">จังหวัดที่ชอบ</div>
           <div class="profile-chips" id="chipsProvince"></div>
         </div>
         <div class="profile-section">
-          <div class="profile-section-label">สไตล์การท่องเที่ยว</div>
           <div class="profile-chips" id="chipsStyle"></div>
         </div>
         <div class="profile-section">
-          <div class="profile-section-label">อาหารที่ชอบ</div>
           <div class="profile-chips" id="chipsFood"></div>
         </div>
         <div class="profile-section">
-          <div class="profile-section-label">การเดินทาง</div>
           <div class="profile-chips" id="chipsTransport"></div>
         </div>
       </div>
       <div class="profile-modal-footer">
-        <button class="profile-skip-btn" id="profileSkipBtn">ข้ามสำหรับตอนนี้</button>
-        <button class="profile-save-btn" id="profileSaveBtn">บันทึกและเริ่มใช้งาน</button>
+        <button class="profile-skip-btn" id="profileSkipBtn">Skip for now</button>
+        <button class="profile-save-btn" id="profileSaveBtn">Save &amp; Start</button>
       </div>
     </div>
   </div>

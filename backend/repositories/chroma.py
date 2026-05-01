@@ -56,11 +56,12 @@ def get_messages(conversation_id: str) -> list[dict]:
 
     messages = [
         {
-            "role": meta["role"],
-            "content": doc,
+            "id":        doc_id,
+            "role":      meta["role"],
+            "content":   doc,
             "timestamp": meta["timestamp"],
         }
-        for doc, meta in zip(results["documents"], results["metadatas"])
+        for doc_id, doc, meta in zip(results["ids"], results["documents"], results["metadatas"])
     ]
     messages.sort(key=lambda m: m["timestamp"])
     return messages
@@ -71,12 +72,44 @@ def get_recent_messages(conversation_id: str, limit: int = 20) -> list[dict]:
     return get_messages(conversation_id)[-limit:]
 
 
-def delete_conversation(conversation_id: str) -> None:
-    """Delete all messages belonging to a conversation."""
+def delete_conversation(conversation_id: str) -> int:
+    """Delete all messages belonging to a conversation. Returns number of deleted messages."""
     collection = get_collection()
     results = collection.get(
         where={"conversation_id": conversation_id},
         include=[],
     )
+    count = len(results["ids"])
     if results["ids"]:
         collection.delete(ids=results["ids"])
+    return count
+
+
+def get_all_conversations() -> list[dict]:
+    """Return all conversations grouped by conversation_id, each sorted by timestamp."""
+    collection = get_collection()
+    results = collection.get(include=["documents", "metadatas"])
+
+    if not results["ids"]:
+        return []
+
+    grouped: dict[str, list[dict]] = {}
+    for doc_id, doc, meta in zip(results["ids"], results["documents"], results["metadatas"]):
+        conv_id = meta["conversation_id"]
+        grouped.setdefault(conv_id, []).append({
+            "id":        doc_id,
+            "role":      meta["role"],
+            "content":   doc,
+            "timestamp": meta["timestamp"],
+        })
+
+    conversations = []
+    for conv_id, messages in grouped.items():
+        messages.sort(key=lambda m: m["timestamp"])
+        conversations.append({
+            "conversation_id": conv_id,
+            "message_count":   len(messages),
+            "messages":        messages,
+        })
+
+    return conversations

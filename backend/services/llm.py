@@ -27,13 +27,13 @@ SYSTEM_PROMPT = (
 )
 
 
-def init_client(api_key: str, base_url: str) -> None:
+def init_client(api_key: str, base_url: str | None = None) -> None:
     global _client
     print(f"[*] llm configurated")
-    _client = OpenAI(
-        api_key=api_key,
-        base_url=base_url
-    )
+    kwargs = {"api_key": api_key}
+    if base_url:
+        kwargs["base_url"] = base_url
+    _client = OpenAI(**kwargs)
 
 
 def _build_user_profile_prompt(user_profile: dict) -> str:

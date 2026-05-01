@@ -1,25 +1,33 @@
 /* ═══════════════════════════════════════════════════════
-   MiniChat AI  –  app.js
-   API base: http://localhost:1323/api/v1
+   GuidyTH  –  app.js
+   API base: /api/v1  (proxied through Nginx on port 8000)
 ═══════════════════════════════════════════════════════ */
 
-const API_BASE = 'http://localhost:1323/api/v1';
+const API_BASE = '/api/v1';
 
-/* ─── Profile options ─── */
+/* ─── Profile options (keys must stay as-is — backend contract) ─── */
 const PROFILE_OPTIONS = {
   favourite_province: ['Bangkok', 'Chiang Mai', 'Chumphon', 'Ratchaburi', 'Yala', 'Chonburi'],
-  style:              ['backpacker', 'nature', 'luxury', 'adventure', 'culture', 'family', 'romantic', 'photography'],
+  style:              ['Backpacker', 'Nature', 'Luxury', 'Adventure', 'Culture', 'Family', 'Romantic', 'Photography'],
   food:               ['Noodle soup', 'Seafood', 'Som Tum', 'Hainanese chicken rice', 'Pad Thai', 'Larb', 'Vegetarian', 'Street food', 'Northern Thai food', 'Northeastern Thai food'],
-  transportation:     ['train', 'plane', 'bus', 'car', 'motorcycle', 'boat'],
+  transportation:     ['Train', 'Plane', 'Bus', 'Car', 'Motorcycle', 'Boat'],
 };
+
+/* ─── Profile section config ─── */
+const PROFILE_SECTIONS = [
+  { containerId: 'chipsProvince',  key: 'favourite_province', label: 'Favourite Provinces', icon: 'map-pin'     },
+  { containerId: 'chipsStyle',     key: 'style',              label: 'Travel Style',         icon: 'backpack'    },
+  { containerId: 'chipsFood',      key: 'food',               label: 'Favourite Food',       icon: 'utensils'    },
+  { containerId: 'chipsTransport', key: 'transportation',     label: 'Getting Around',       icon: 'train-front' },
+];
 
 /* ─── State ─── */
 const state = {
-  userId: getOrCreateUserId(),
+  userId:        getOrCreateUserId(),
   conversations: loadConversations(),   // { [id]: { id, title, createdAt } }
-  activeId: null,
-  streaming: false,
-  userProfile: loadUserProfile(),       // { favourite_province, style, food, transportation }
+  activeId:      null,
+  streaming:     false,
+  userProfile:   loadUserProfile(),     // { favourite_province, style, food, transportation, ... }
 };
 
 /* ─── DOM refs ─── */
@@ -27,6 +35,7 @@ const $ = id => document.getElementById(id);
 const dom = {
   sidebar:          $('sidebar'),
   sidebarToggle:    $('sidebarToggle'),
+  sidebarBackdrop:  $('sidebarBackdrop'),
   newChatBtn:       $('newChatBtn'),
   convList:         $('conversationList'),
   chatMessages:     $('chatMessages'),
@@ -44,6 +53,16 @@ const dom = {
   profileSkipBtn:   $('profileSkipBtn'),
 };
 
+/* ─── Lucide helper ─── */
+function initIcons(scope) {
+  if (typeof lucide === 'undefined') return;
+  if (scope) {
+    lucide.createIcons({ nodes: Array.from(scope.querySelectorAll('[data-lucide]')) });
+  } else {
+    lucide.createIcons();
+  }
+}
+
 /* ══════════════════════════════════════════
    HELPERS
 ══════════════════════════════════════════ */
@@ -55,22 +74,22 @@ function uuid() {
 }
 
 function getOrCreateUserId() {
-  let id = localStorage.getItem('minichat_user_id');
+  let id = localStorage.getItem('guidyth_user_id');
   if (!id) {
     id = 'user_' + uuid();
-    localStorage.setItem('minichat_user_id', id);
+    localStorage.setItem('guidyth_user_id', id);
   }
   return id;
 }
 
 function loadConversations() {
   try {
-    return JSON.parse(localStorage.getItem('minichat_conversations') || '{}');
+    return JSON.parse(localStorage.getItem('guidyth_conversations') || '{}');
   } catch { return {}; }
 }
 
 function saveConversations() {
-  localStorage.setItem('minichat_conversations', JSON.stringify(state.conversations));
+  localStorage.setItem('guidyth_conversations', JSON.stringify(state.conversations));
 }
 
 function truncate(str, n = 40) {
@@ -91,12 +110,12 @@ function showError(msg, duration = 4000) {
 
 function loadUserProfile() {
   try {
-    return JSON.parse(localStorage.getItem('minichat_user_profile') || 'null');
+    return JSON.parse(localStorage.getItem('guidyth_user_profile') || 'null');
   } catch { return null; }
 }
 
 function saveUserProfile(profile) {
-  localStorage.setItem('minichat_user_profile', JSON.stringify(profile));
+  localStorage.setItem('guidyth_user_profile', JSON.stringify(profile));
   state.userProfile = profile;
   updateProfileBtn();
 }
@@ -110,6 +129,32 @@ function updateProfileBtn() {
 }
 
 /* ══════════════════════════════════════════
+   SIDEBAR
+══════════════════════════════════════════ */
+function closeSidebar() {
+  dom.sidebar.classList.remove('mobile-open', 'tablet-open');
+  dom.sidebarBackdrop.classList.remove('visible');
+}
+
+dom.sidebarToggle.addEventListener('click', () => {
+  const w = window.innerWidth;
+  if (w < 768) {
+    // Mobile: overlay slide-in
+    const isOpen = dom.sidebar.classList.toggle('mobile-open');
+    dom.sidebarBackdrop.classList.toggle('visible', isOpen);
+  } else if (w < 1024) {
+    // Tablet: toggle tablet-open (sidebar starts collapsed)
+    const isOpen = dom.sidebar.classList.toggle('tablet-open');
+    dom.sidebarBackdrop.classList.toggle('visible', isOpen);
+  } else {
+    // Desktop: toggle collapsed width
+    dom.sidebar.classList.toggle('collapsed');
+  }
+});
+
+dom.sidebarBackdrop.addEventListener('click', closeSidebar);
+
+/* ══════════════════════════════════════════
    SIDEBAR / CONVERSATIONS UI
 ══════════════════════════════════════════ */
 function renderConversationList() {
@@ -119,7 +164,7 @@ function renderConversationList() {
 
   if (sorted.length === 0) {
     const empty = document.createElement('div');
-    empty.style.cssText = 'font-size:12px;color:#6e6e80;padding:10px 12px;';
+    empty.style.cssText = 'font-size:12px;color:#8c8fa1;padding:10px 12px;font-weight:500;';
     empty.textContent = 'No conversations yet';
     dom.convList.appendChild(empty);
     return;
@@ -137,7 +182,7 @@ function renderConversationList() {
     const delBtn = document.createElement('button');
     delBtn.className = 'conv-delete-btn';
     delBtn.title = 'Delete conversation';
-    delBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>`;
+    delBtn.innerHTML = '<i data-lucide="x"></i>';
     delBtn.addEventListener('click', e => {
       e.stopPropagation();
       openDeleteModal(conv.id);
@@ -145,9 +190,15 @@ function renderConversationList() {
 
     item.appendChild(title);
     item.appendChild(delBtn);
-    item.addEventListener('click', () => loadConversation(conv.id));
+    item.addEventListener('click', () => {
+      loadConversation(conv.id);
+      // Close sidebar on mobile/tablet after selecting
+      if (window.innerWidth < 1024) closeSidebar();
+    });
     dom.convList.appendChild(item);
   });
+
+  initIcons(dom.convList);
 }
 
 function setActiveConversation(id) {
@@ -163,19 +214,14 @@ function setActiveConversation(id) {
    MESSAGES UI
 ══════════════════════════════════════════ */
 function hideWelcome() {
-  if (dom.welcomeScreen) {
-    dom.welcomeScreen.style.display = 'none';
-  }
+  if (dom.welcomeScreen) dom.welcomeScreen.style.display = 'none';
 }
 
 function showWelcome() {
-  if (dom.welcomeScreen) {
-    dom.welcomeScreen.style.display = '';
-  }
+  if (dom.welcomeScreen) dom.welcomeScreen.style.display = '';
 }
 
 function clearMessages() {
-  // Remove all .message-row elements
   dom.chatMessages.querySelectorAll('.message-row').forEach(el => el.remove());
 }
 
@@ -194,7 +240,7 @@ function appendAssistantMessage(text, streaming = false) {
   row.innerHTML = `
     <div class="message-bubble">
       <div class="assistant-avatar">
-        <img src="assets/logo.svg" alt="AI" />
+        <img src="assets/logo.svg" alt="Guidy" />
       </div>
       <div class="assistant-body">
         <div class="assistant-content ${streaming ? 'typing-cursor' : ''}">${
@@ -204,8 +250,7 @@ function appendAssistantMessage(text, streaming = false) {
         }</div>
         <div class="message-actions">
           <button class="like-btn" title="Like this response">
-            <svg class="like-icon-outline" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14z"/><path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>
-            <svg class="like-icon-filled" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14z"/><path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>
+            <i data-lucide="thumbs-up"></i>
           </button>
         </div>
       </div>
@@ -216,7 +261,9 @@ function appendAssistantMessage(text, streaming = false) {
   const contentEl = row.querySelector('.assistant-content');
   const likeBtn   = row.querySelector('.like-btn');
 
-  // Restore liked state if content is already in favourites
+  initIcons(row);
+
+  // Restore liked state
   if (text && state.userProfile?.favourite) {
     const snippet = text.trim().slice(0, 300);
     if (state.userProfile.favourite.includes(snippet)) {
@@ -279,7 +326,7 @@ async function loadConversation(id) {
   showWelcome();
 
   try {
-    const res = await fetch(`${API_BASE}/chat/history/${id}`);
+    const res = await fetch(`${API_BASE}/history/${id}`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     renderMessages(data.messages || []);
@@ -294,7 +341,7 @@ function newChat() {
   const id = uuid();
   state.conversations[id] = {
     id,
-    title: 'New Chat',
+    title:     'New Chat',
     createdAt: Date.now(),
   };
   saveConversations();
@@ -305,18 +352,14 @@ function newChat() {
   dom.messageInput.focus();
 }
 
-/* Send message using stream endpoint */
+/* Send message — POST /api/v1/recommend */
 async function sendMessage(text) {
   if (state.streaming || !text.trim()) return;
 
-  // Create conversation if none is active
-  if (!state.activeId) {
-    newChat();
-  }
+  if (!state.activeId) newChat();
 
   const convId = state.activeId;
 
-  // Update title with first message
   if (state.conversations[convId] && state.conversations[convId].title === 'New Chat') {
     state.conversations[convId].title = truncate(text);
     saveConversations();
@@ -325,98 +368,54 @@ async function sendMessage(text) {
   }
 
   appendUserMessage(text);
-  const contentEl = appendAssistantMessage('', true);
+  const contentEl = appendAssistantMessage('', false);
 
   state.streaming = true;
   dom.sendBtn.disabled = true;
   dom.messageInput.disabled = true;
 
-  let accumulated = '';
-
   try {
-    const reqBody = { message: text, conversation_id: convId };
-    if (state.userProfile) reqBody.user_profile = state.userProfile;
+    const p = state.userProfile || {};
+    const user_profile = {
+      favourite:          p.favourite          || [],
+      favourite_province: p.favourite_province || [],
+      style:              p.style              || [],
+      food:               p.food               || [],
+      transportation:     p.transportation     || [],
+      budget:             p.budget             || 'mid',
+      avoid_crowd:        p.avoid_crowd        ?? false,
+      saved_location:     p.saved_location     || [],
+    };
 
-    const res = await fetch(`${API_BASE}/chat/stream`, {
-      method: 'POST',
+    const reqBody = {
+      message:         text,
+      conversation_id: convId,
+      nick_name:       state.userId,
+      user_profile,
+    };
+
+    const res = await fetch(`${API_BASE}/recommend`, {
+      method:  'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(reqBody),
+      body:    JSON.stringify(reqBody),
     });
 
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
-    const reader = res.body.getReader();
-    const decoder = new TextDecoder();
-    let buffer = '';
-
-    while (true) {
-      const { value, done } = await reader.read();
-      if (done) break;
-
-      buffer += decoder.decode(value, { stream: true });
-
-      // Handle SSE lines  (data: ...\n\n)  OR  raw JSON chunks
-      const lines = buffer.split('\n');
-      buffer = lines.pop(); // keep incomplete line
-
-      for (const line of lines) {
-        const trimmed = line.trim();
-        if (!trimmed || trimmed === 'data: [DONE]') continue;
-
-        let chunk = '';
-
-        if (trimmed.startsWith('data:')) {
-          const jsonStr = trimmed.slice(5).trim();
-          if (!jsonStr || jsonStr === '[DONE]') continue;
-          try {
-            const parsed = JSON.parse(jsonStr);
-            // Support multiple common shapes
-            chunk = parsed.content ?? parsed.text ?? parsed.delta ?? parsed.choices?.[0]?.delta?.content ?? '';
-          } catch {
-            chunk = jsonStr; // treat as raw text
-          }
-        } else {
-          // Try raw JSON
-          try {
-            const parsed = JSON.parse(trimmed);
-            chunk = parsed.content ?? parsed.text ?? parsed.delta ?? '';
-          } catch {
-            chunk = trimmed;
-          }
-        }
-
-        if (chunk) {
-          accumulated += chunk;
-          contentEl.classList.add('typing-cursor');
-          contentEl.innerHTML = typeof marked !== 'undefined'
-            ? marked.parse(accumulated)
-            : escapeHtml(accumulated);
-          scrollToBottom();
-        }
-      }
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.detail || `HTTP ${res.status}`);
     }
 
-    // Process any remaining buffer
-    if (buffer.trim()) {
-      try {
-        const parsed = JSON.parse(buffer.trim().startsWith('data:')
-          ? buffer.trim().slice(5)
-          : buffer.trim());
-        const chunk = parsed.content ?? parsed.text ?? parsed.delta ?? '';
-        if (chunk) {
-          accumulated += chunk;
-          contentEl.innerHTML = typeof marked !== 'undefined'
-            ? marked.parse(accumulated)
-            : escapeHtml(accumulated);
-        }
-      } catch { /* ignore */ }
-    }
+    const data  = await res.json();
+    const reply = data.response || '';
+
+    contentEl.innerHTML = typeof marked !== 'undefined'
+      ? marked.parse(reply)
+      : escapeHtml(reply);
 
   } catch (err) {
-    contentEl.innerHTML = `<span style="color:#fca5a5">Error: ${escapeHtml(err.message)}</span>`;
+    contentEl.innerHTML = `<span style="color:var(--danger)">${escapeHtml(err.message)}</span>`;
     console.error(err);
   } finally {
-    contentEl.classList.remove('typing-cursor');
     state.streaming = false;
     dom.sendBtn.disabled = !dom.messageInput.value.trim();
     dom.messageInput.disabled = false;
@@ -428,10 +427,9 @@ async function sendMessage(text) {
 /* Delete history (server + local) */
 async function deleteHistory(id) {
   try {
-    const res = await fetch(`${API_BASE}/chat/history/${id}`, { method: 'DELETE' });
+    const res = await fetch(`${API_BASE}/history/${id}`, { method: 'DELETE' });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
   } catch (err) {
-    // Log but still proceed with local cleanup
     console.warn('Server delete failed:', err);
   }
 
@@ -466,15 +464,27 @@ function closeProfileModal() {
 }
 
 function renderAllChips() {
-  renderChipGroup('chipsProvince',  'favourite_province', profileDraft.favourite_province || []);
-  renderChipGroup('chipsStyle',     'style',              profileDraft.style || []);
-  renderChipGroup('chipsFood',      'food',               profileDraft.food || []);
-  renderChipGroup('chipsTransport', 'transportation',     profileDraft.transportation || []);
+  PROFILE_SECTIONS.forEach(({ containerId, key, label, icon }) => {
+    renderChipGroup(containerId, key, profileDraft[key] || [], label, icon);
+  });
 }
 
-function renderChipGroup(containerId, key, selected) {
+function renderChipGroup(containerId, key, selected, sectionLabel, iconName) {
   const container = $(containerId);
   container.innerHTML = '';
+
+  // Section label with Lucide icon
+  if (sectionLabel) {
+    const labelEl = document.createElement('div');
+    labelEl.className = 'profile-section-label';
+    labelEl.innerHTML = `<i data-lucide="${iconName}"></i>${sectionLabel}`;
+    container.parentElement.insertBefore(labelEl, container);
+    // Remove any previously inserted label to avoid duplicates
+    const existing = container.parentElement.querySelectorAll('.profile-section-label');
+    if (existing.length > 1) existing[0].remove();
+    initIcons(labelEl);
+  }
+
   PROFILE_OPTIONS[key].forEach(option => {
     const chip = document.createElement('button');
     chip.type = 'button';
@@ -485,7 +495,7 @@ function renderChipGroup(containerId, key, selected) {
       const idx = arr.indexOf(option);
       if (idx === -1) arr.push(option); else arr.splice(idx, 1);
       profileDraft[key] = arr;
-      renderChipGroup(containerId, key, arr);
+      renderChipGroup(containerId, key, arr, sectionLabel, iconName);
     });
     container.appendChild(chip);
   });
@@ -497,7 +507,6 @@ dom.profileSaveBtn.addEventListener('click', () => {
 });
 
 dom.profileSkipBtn.addEventListener('click', closeProfileModal);
-
 dom.editProfileBtn.addEventListener('click', openProfileModal);
 
 /* ══════════════════════════════════════════
@@ -520,9 +529,7 @@ dom.modalBackdrop.addEventListener('click', e => {
   if (e.target === dom.modalBackdrop) closeDeleteModal();
 });
 dom.modalConfirm.addEventListener('click', async () => {
-  if (pendingDeleteId) {
-    await deleteHistory(pendingDeleteId);
-  }
+  if (pendingDeleteId) await deleteHistory(pendingDeleteId);
   closeDeleteModal();
 });
 
@@ -530,32 +537,21 @@ dom.modalConfirm.addEventListener('click', async () => {
    EVENTS
 ══════════════════════════════════════════ */
 
-/* New chat */
-dom.newChatBtn.addEventListener('click', newChat);
+dom.newChatBtn.addEventListener('click', () => {
+  newChat();
+  if (window.innerWidth < 1024) closeSidebar();
+});
 
-/* Delete current chat (header button) */
 dom.deleteHistoryBtn.addEventListener('click', () => {
   if (state.activeId) openDeleteModal(state.activeId);
 });
 
-/* Sidebar toggle */
-dom.sidebarToggle.addEventListener('click', () => {
-  const isMobile = window.innerWidth <= 640;
-  if (isMobile) {
-    dom.sidebar.classList.toggle('mobile-open');
-  } else {
-    dom.sidebar.classList.toggle('collapsed');
-  }
-});
-
-/* Input: auto-resize + enable send button */
 dom.messageInput.addEventListener('input', () => {
   dom.messageInput.style.height = 'auto';
   dom.messageInput.style.height = Math.min(dom.messageInput.scrollHeight, 200) + 'px';
   dom.sendBtn.disabled = !dom.messageInput.value.trim() || state.streaming;
 });
 
-/* Enter to send (Shift+Enter for newline) */
 dom.messageInput.addEventListener('keydown', e => {
   if (e.key === 'Enter' && !e.shiftKey) {
     e.preventDefault();
@@ -563,7 +559,6 @@ dom.messageInput.addEventListener('keydown', e => {
   }
 });
 
-/* Send button click */
 dom.sendBtn.addEventListener('click', handleSend);
 
 function handleSend() {
@@ -575,13 +570,13 @@ function handleSend() {
   sendMessage(text);
 }
 
-/* Close sidebar on mobile when clicking outside */
+/* Close sidebar when clicking outside on mobile/tablet */
 document.addEventListener('click', e => {
-  if (window.innerWidth <= 640
+  if (window.innerWidth < 1024
     && dom.sidebar.classList.contains('mobile-open')
     && !dom.sidebar.contains(e.target)
-    && e.target !== dom.sidebarToggle) {
-    dom.sidebar.classList.remove('mobile-open');
+    && !dom.sidebarToggle.contains(e.target)) {
+    closeSidebar();
   }
 });
 
@@ -589,15 +584,16 @@ document.addEventListener('click', e => {
    INIT
 ══════════════════════════════════════════ */
 (function init() {
-  // Configure marked options
   if (typeof marked !== 'undefined') {
     marked.setOptions({ breaks: true, gfm: true });
   }
 
+  // Hydrate all static Lucide icons in the HTML
+  initIcons();
+
   renderConversationList();
   updateProfileBtn();
 
-  // Auto-select most recent conversation if any
   const sorted = Object.values(state.conversations).sort((a, b) => b.createdAt - a.createdAt);
   if (sorted.length > 0) {
     loadConversation(sorted[0].id);
@@ -605,10 +601,7 @@ document.addEventListener('click', e => {
     showWelcome();
   }
 
-  // Show profile modal on first visit (no profile saved yet)
-  if (!state.userProfile) {
-    openProfileModal();
-  }
+  if (!state.userProfile) openProfileModal();
 
-  console.log(`MiniChat AI — User ID: ${state.userId}`);
+  console.log(`GuidyTH — User ID: ${state.userId}`);
 })();

@@ -1,16 +1,15 @@
 import os
-import signal
-import asyncio
 import uvicorn
+from pathlib import Path
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from routers import chat
+from routers.chat import recommend_router, history_router
 from services import llm
 from repositories import chroma
 
-load_dotenv(".env")
+load_dotenv(Path(__file__).parent / ".env")
 
 chroma.init_chroma(path=os.getenv("CHROMA_PATH", os.getenv("CHROMA_PATH")))
 
@@ -29,19 +28,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(chat.router, prefix="/api/v1")
+app.include_router(recommend_router, prefix="/api/v1")
+app.include_router(history_router,   prefix="/api/v1")
 
 
 
 
 if __name__ == "__main__":
-    server = uvicorn.Server(
-        uvicorn.Config(app, host="0.0.0.0", port=1323)
-    )
-
-    loop = asyncio.get_event_loop()
-
-    for sig in (signal.SIGINT, signal.SIGTERM):
-        loop.add_signal_handler(sig, lambda: asyncio.create_task(server.shutdown()))
-
-    loop.run_until_complete(server.serve())
+    uvicorn.run(app, host="0.0.0.0", port=1323)
