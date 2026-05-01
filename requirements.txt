@@ -1,6 +1,5 @@
 # API Server
 fastapi
-uvicorn[standard]
 pydantic
 
 # Vector Database & Embeddings

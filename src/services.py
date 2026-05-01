@@ -1,4 +1,4 @@
-from src.rag import get_recommendations, generate_ai_reasons, generate_suggested_prompts
+from src.rag import get_recommendations, generate_ai_reasons, generate_ai_reasons_stream, generate_suggested_prompts
 from src.repository import (
     save_message,
     get_conversation_history,
@@ -41,6 +41,41 @@ def get_travel_recommendations(
         save_message(conversation_id, "assistant", ai_reason)
 
     return top_places, ai_reason, suggested_prompts
+
+
+def get_travel_recommendations_stream(
+    profile_dict: dict,
+    message: str = "",
+    top_k: int = 3,
+    conversation_id: str = None,
+):
+    """
+    Streaming variant — returns places + suggested_prompts immediately,
+    plus a generator that yields AI response chunks token-by-token.
+
+    The caller is responsible for accumulating chunks and saving the
+    assistant message to history after streaming completes.
+
+    Returns (top_places, suggested_prompts, ai_chunk_generator)
+    """
+    top_places = get_recommendations(
+        user_profile=profile_dict,
+        message=message,
+        top_k=top_k,
+    )
+
+    suggested_prompts = generate_suggested_prompts(top_places, profile_dict)
+
+    if conversation_id:
+        save_message(conversation_id, "user", message)
+
+    ai_stream = generate_ai_reasons_stream(
+        places=top_places,
+        user_profile=profile_dict,
+        message=message,
+    )
+
+    return top_places, suggested_prompts, ai_stream
 
 
 # =============================================================================

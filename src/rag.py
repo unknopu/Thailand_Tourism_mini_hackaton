@@ -255,6 +255,67 @@ def generate_ai_reasons(places: list, user_profile: dict, message: str = "") -> 
         return f"Sorry, something went wrong while generating a response: {str(e)}"
 
 
+def generate_ai_reasons_stream(places: list, user_profile: dict, message: str = ""):
+    """
+    Same as generate_ai_reasons but streams token-by-token via SSE.
+    Yields text chunks as they arrive from the LLM.
+    """
+    places_context = ""
+    for idx, p in enumerate(places):
+        places_context += (
+            f"{idx+1}. {p['name']} (Match: {p['match_score']*100:.1f}%)\n"
+            f"   Thai Name: {p.get('name_th', 'N/A')}\n"
+            f"   Province: {p.get('province', 'N/A')} | Region: {p.get('region', 'N/A')}\n"
+            f"   Style: {p.get('style', 'N/A')} | Budget: {p.get('budget_range', 'N/A')}\n"
+            f"   Crowd Level: {p.get('crowd_level', 'N/A')}/10 "
+            f"| Hidden Gem Score: {p.get('hidden_gem_score', 'N/A')}\n"
+            f"   Tags: {p.get('tags', 'N/A')}\n"
+            f"   Details: {p['details'][:300]}...\n\n"
+        )
+
+    saved = user_profile.get('saved_location', [])
+    saved_context = ""
+    if saved:
+        saved_context = (
+            f"\nUser has already saved these places: {', '.join(saved)}. "
+            "Do NOT re-recommend these. Focus on new discoveries."
+        )
+
+    system_prompt = (
+        "You are a friendly and knowledgeable Thailand travel guide. "
+        "Always respond in English. Keep answers short, natural, and conversational — "
+        "like a well-travelled friend giving advice. "
+        "If the user asks a specific question, answer it first, then introduce the recommended places."
+    )
+
+    user_prompt = (
+        f"User's message: \"{message}\"\n\n"
+        f"User profile: {user_profile}\n"
+        f"{saved_context}\n\n"
+        f"Recommended places:\n{places_context}\n"
+        "Please answer the user's question and explain why these places are a great fit for them. "
+        "Keep it to 3–4 sentences max, friendly and natural."
+    )
+
+    print("🤖 Streaming response from LLM...")
+    try:
+        stream = groq_client.chat.completions.create(
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ],
+            model="typhoon-v2.5-30b-a3b-instruct",
+            temperature=0.7,
+            stream=True,
+        )
+        for chunk in stream:
+            content = chunk.choices[0].delta.content
+            if content:
+                yield content
+    except Exception as e:
+        yield f"Sorry, something went wrong while generating a response: {str(e)}"
+
+
 # =============================================================================
 # Step 4: Generate Suggested Follow-up Prompts
 # =============================================================================
