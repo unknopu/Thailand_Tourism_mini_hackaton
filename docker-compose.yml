@@ -9,6 +9,16 @@ services:
       - ./backend/chroma_db:/app/chroma_db
     env_file:
       - ./backend/.env
+    command: >
+      sh -c "
+      if [ ! -d /app/chroma_db ] || [ -z \"$(ls -A /app/chroma_db 2>/dev/null)\" ]; then
+        echo 'No chroma_db found, running embedding...';
+        python embeded.py;
+      else
+        echo 'chroma_db exists, skipping embedding';
+      fi &&
+      uvicorn main:app --host 0.0.0.0 --port 8000
+      "
     restart: unless-stopped
 
   frontend:
