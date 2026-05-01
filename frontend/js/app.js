@@ -1,9 +1,9 @@
 /* ═══════════════════════════════════════════════════════
    MiniChat AI  –  app.js
-   API base: http://localhost:1323/api/v1
+   API base: http://localhost:8000/api/v1
 ═══════════════════════════════════════════════════════ */
 
-const API_BASE = 'http://localhost:1323/api/v1';
+const API_BASE = (window._env_ && window._env_.API_BASE) || 'http://localhost:8000/api/v1';
 
 /* ─── Profile options ─── */
 const PROFILE_OPTIONS = {
@@ -11,6 +11,7 @@ const PROFILE_OPTIONS = {
   style:              ['backpacker', 'nature', 'luxury', 'adventure', 'culture', 'family', 'romantic', 'photography'],
   food:               ['Noodle soup', 'Seafood', 'Som Tum', 'Hainanese chicken rice', 'Pad Thai', 'Larb', 'Vegetarian', 'Street food', 'Northern Thai food', 'Northeastern Thai food'],
   transportation:     ['train', 'plane', 'bus', 'car', 'motorcycle', 'boat'],
+  budget:             ['low', 'mid', 'high'],
 };
 
 /* ─── State ─── */
@@ -42,6 +43,8 @@ const dom = {
   profileBackdrop:  $('profileBackdrop'),
   profileSaveBtn:   $('profileSaveBtn'),
   profileSkipBtn:   $('profileSkipBtn'),
+  avoidCrowdToggle: $('avoidCrowdToggle'),
+  nickNameInput:    $('nickNameInput'),
 };
 
 /* ══════════════════════════════════════════
@@ -279,7 +282,7 @@ async function loadConversation(id) {
   showWelcome();
 
   try {
-    const res = await fetch(`${API_BASE}/chat/history/${id}`);
+    const res = await fetch(`${API_BASE}/history/${id}`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     renderMessages(data.messages || []);
@@ -335,9 +338,12 @@ async function sendMessage(text) {
 
   try {
     const reqBody = { message: text, conversation_id: convId };
-    if (state.userProfile) reqBody.user_profile = state.userProfile;
+    if (state.userProfile) {
+      reqBody.user_profile = state.userProfile;
+      if (state.userProfile.nick_name) reqBody.nick_name = state.userProfile.nick_name;
+    }
 
-    const res = await fetch(`${API_BASE}/chat/stream`, {
+    const res = await fetch(`${API_BASE}/recommend/stream`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(reqBody),
@@ -428,7 +434,7 @@ async function sendMessage(text) {
 /* Delete history (server + local) */
 async function deleteHistory(id) {
   try {
-    const res = await fetch(`${API_BASE}/chat/history/${id}`, { method: 'DELETE' });
+    const res = await fetch(`${API_BASE}/history/${id}`, { method: 'DELETE' });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
   } catch (err) {
     // Log but still proceed with local cleanup
@@ -456,8 +462,14 @@ let profileDraft = {};
 function openProfileModal() {
   profileDraft = state.userProfile
     ? JSON.parse(JSON.stringify(state.userProfile))
-    : { favourite_province: [], style: [], food: [], transportation: [], favourite: [] };
+    : { favourite_province: [], style: [], food: [], transportation: [], favourite: [], budget: 'mid', avoid_crowd: false, saved_location: [], nick_name: '' };
+  // Ensure new fields are present when loading an old profile
+  if (!profileDraft.budget) profileDraft.budget = 'mid';
+  if (profileDraft.avoid_crowd === undefined) profileDraft.avoid_crowd = false;
+  if (!profileDraft.saved_location) profileDraft.saved_location = [];
+  if (profileDraft.nick_name === undefined) profileDraft.nick_name = '';
   renderAllChips();
+  if (dom.nickNameInput) dom.nickNameInput.value = profileDraft.nick_name || '';
   dom.profileBackdrop.classList.add('open');
 }
 
@@ -470,6 +482,25 @@ function renderAllChips() {
   renderChipGroup('chipsStyle',     'style',              profileDraft.style || []);
   renderChipGroup('chipsFood',      'food',               profileDraft.food || []);
   renderChipGroup('chipsTransport', 'transportation',     profileDraft.transportation || []);
+  renderBudgetChips();
+  if (dom.avoidCrowdToggle) dom.avoidCrowdToggle.checked = !!profileDraft.avoid_crowd;
+}
+
+function renderBudgetChips() {
+  const container = $('chipsBudget');
+  if (!container) return;
+  container.innerHTML = '';
+  PROFILE_OPTIONS.budget.forEach(option => {
+    const chip = document.createElement('button');
+    chip.type = 'button';
+    chip.className = 'profile-chip' + (profileDraft.budget === option ? ' selected' : '');
+    chip.textContent = option;
+    chip.addEventListener('click', () => {
+      profileDraft.budget = option;
+      renderBudgetChips();
+    });
+    container.appendChild(chip);
+  });
 }
 
 function renderChipGroup(containerId, key, selected) {
@@ -492,6 +523,8 @@ function renderChipGroup(containerId, key, selected) {
 }
 
 dom.profileSaveBtn.addEventListener('click', () => {
+  if (dom.avoidCrowdToggle) profileDraft.avoid_crowd = dom.avoidCrowdToggle.checked;
+  if (dom.nickNameInput) profileDraft.nick_name = dom.nickNameInput.value.trim();
   saveUserProfile(profileDraft);
   closeProfileModal();
 });
@@ -594,16 +627,36 @@ document.addEventListener('click', e => {
     marked.setOptions({ breaks: true, gfm: true });
   }
 
-  renderConversationList();
   updateProfileBtn();
 
-  // Auto-select most recent conversation if any
-  const sorted = Object.values(state.conversations).sort((a, b) => b.createdAt - a.createdAt);
-  if (sorted.length > 0) {
-    loadConversation(sorted[0].id);
-  } else {
-    showWelcome();
-  }
+  // Fetch all conversations from server, merge with localStorage
+  fetch(`${API_BASE}/history`)
+    .then(res => res.ok ? res.json() : null)
+    .then(data => {
+      if (data && data.conversations) {
+        data.conversations.forEach(conv => {
+          if (!state.conversations[conv.conversation_id]) {
+            const firstMsg = conv.messages && conv.messages[0];
+            state.conversations[conv.conversation_id] = {
+              id:        conv.conversation_id,
+              title:     firstMsg ? truncate(firstMsg.content) : 'Chat ' + conv.conversation_id,
+              createdAt: firstMsg ? firstMsg.timestamp * 1000 : Date.now(),
+            };
+          }
+        });
+        saveConversations();
+      }
+    })
+    .catch(err => console.warn('Could not load server history:', err))
+    .finally(() => {
+      renderConversationList();
+      const sorted = Object.values(state.conversations).sort((a, b) => b.createdAt - a.createdAt);
+      if (sorted.length > 0) {
+        loadConversation(sorted[0].id);
+      } else {
+        showWelcome();
+      }
+    });
 
   // Show profile modal on first visit (no profile saved yet)
   if (!state.userProfile) {

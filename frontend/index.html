@@ -6,6 +6,7 @@
   <title>MiniChat AI</title>
   <link rel="stylesheet" href="css/style.css" />
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="env-config.js"></script>
 </head>
 <body>
 
@@ -121,6 +122,10 @@
       </div>
       <div class="profile-modal-body">
         <div class="profile-section">
+          <div class="profile-section-label">ชื่อเล่น (Nickname)</div>
+          <input type="text" id="nickNameInput" class="profile-text-input" placeholder="ใส่ชื่อเล่นของคุณ…" maxlength="50" />
+        </div>
+        <div class="profile-section">
           <div class="profile-section-label">จังหวัดที่ชอบ</div>
           <div class="profile-chips" id="chipsProvince"></div>
         </div>
@@ -135,6 +140,17 @@
         <div class="profile-section">
           <div class="profile-section-label">การเดินทาง</div>
           <div class="profile-chips" id="chipsTransport"></div>
+        </div>
+        <div class="profile-section">
+          <div class="profile-section-label">งบประมาณ</div>
+          <div class="profile-chips" id="chipsBudget"></div>
+        </div>
+        <div class="profile-section">
+          <div class="profile-section-label">การตั้งค่าเพิ่มเติม</div>
+          <label class="avoid-crowd-label">
+            <input type="checkbox" id="avoidCrowdToggle" />
+            <span class="avoid-crowd-text">หลีกเลี่ยงสถานที่แออัด</span>
+          </label>
         </div>
       </div>
       <div class="profile-modal-footer">
