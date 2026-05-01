@@ -6,6 +6,9 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
+# Install CPU-only PyTorch first to avoid pulling multi-GB CUDA libraries
+RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
+
 # Install dependencies first (layer is cached unless requirements.txt changes)
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
@@ -13,8 +16,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application source
 COPY . .
 
-RUN pip install --upgrade pip\
-    && pip install -r requirements.txt \
+RUN pip install --upgrade pip \
     && python embed_places.py
 
 EXPOSE 8000
