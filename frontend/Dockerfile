@@ -12,8 +12,6 @@ COPY css/       /usr/share/nginx/html/css/
 COPY js/        /usr/share/nginx/html/js/
 COPY assets/    /usr/share/nginx/html/assets/
 
-# Copy and set up entrypoint that injects env vars at runtime
-COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+EXPOSE 80
 
-CMD ["/entrypoint.sh"]
+CMD ["nginx", "-g", "daemon off;"]

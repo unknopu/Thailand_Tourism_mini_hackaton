@@ -3,7 +3,7 @@
    API base: http://localhost:8000/api/v1
 ═══════════════════════════════════════════════════════ */
 
-const API_BASE = (window._env_ && window._env_.API_BASE) || 'http://localhost:8000/api/v1';
+const API_BASE = 'http://localhost:8000/api/v1';
 
 /* ─── Profile options ─── */
 const PROFILE_OPTIONS = {
