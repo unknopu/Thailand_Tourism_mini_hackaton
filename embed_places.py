@@ -81,7 +81,7 @@ def read_places_csv(file_path):
     places = []
     
     # Open and read the CSV file
-    with open(file_path, 'r', encoding='utf-8') as file:
+    with open(file_path, 'r', encoding='utf-8-sig', errors='replace') as file:
         csv_reader = csv.DictReader(file)
         
         # Loop through each row and store as dictionary
