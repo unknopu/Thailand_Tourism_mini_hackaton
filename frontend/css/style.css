@@ -859,6 +859,39 @@ body {
   border-color: var(--brand-yellow-hover);
 }
 
+.profile-text-input {
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-size: 14px;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+}
+.profile-text-input:focus { border-color: var(--accent); }
+.profile-text-input::placeholder { color: var(--text-muted, #6e6e80); }
+
+.avoid-crowd-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  user-select: none;
+}
+.avoid-crowd-label input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+.avoid-crowd-text {
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
 .profile-modal-footer {
   padding: 16px 28px 24px;
   border-top: 1.5px solid var(--border);

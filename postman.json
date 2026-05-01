@@ -1,0 +1,294 @@
+{
+  "info": {
+    "_postman_id": "1cb74c42-b6df-4d31-ad07-ad456088c097",
+    "name": "hack4 Copy",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "14308337"
+  },
+  "item": [
+    {
+      "name": "chat",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"message\": \"หิวข้าวแกง\",\n  \"conversation_id\": \"88\",\n  \"nick_name\": \"JACK_ASSSY\",\n  \"user_profile\": {\n    \"favourite\": [],\n    \"favourite_province\": [\"ChiangMai\", \"Kra-bi\"],\n    \"style\": [\"backpacker\", \"Nature\"],\n    \"food\": [\"Noodle\", \"Seafood\"],\n    \"transportation\": [\"train\"],\n    \"budget\": \"mid\",\n    \"avoid_crowd\": false,\n    \"saved_location\": []\n  }\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8000/api/v1/recommend",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8000",
+          "path": [
+            "api",
+            "v1",
+            "recommend"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "stream",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"message\": \"หิวข้าวแกง\",\n  \"conversation_id\": \"88\",\n  \"nick_name\": \"JACK_ASSSY\",\n  \"user_profile\": {\n    \"favourite\": [],\n    \"favourite_province\": [\"ChiangMai\", \"Kra-bi\"],\n    \"style\": [\"backpacker\", \"Nature\"],\n    \"food\": [\"Noodle\", \"Seafood\"],\n    \"transportation\": [\"train\"],\n    \"budget\": \"mid\",\n    \"avoid_crowd\": false,\n    \"saved_location\": []\n  }\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8000/api/v1/recommend/stream",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8000",
+          "path": [
+            "api",
+            "v1",
+            "recommend",
+            "stream"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "remove chat-id",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8000/api/v1/history/:id",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8000",
+          "path": [
+            "api",
+            "v1",
+            "history",
+            ":id"
+          ],
+          "variable": [
+            {
+              "key": "id",
+              "value": "string"
+            }
+          ]
+        }
+      },
+      "response": [
+        {
+          "name": "remove chat-id",
+          "originalRequest": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8000/api/v1/history/:id",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8000",
+              "path": [
+                "api",
+                "v1",
+                "history",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "string"
+                }
+              ]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": null,
+          "header": [
+            {
+              "key": "date",
+              "value": "Fri, 01 May 2026 12:57:26 GMT"
+            },
+            {
+              "key": "server",
+              "value": "uvicorn"
+            },
+            {
+              "key": "content-length",
+              "value": "61"
+            },
+            {
+              "key": "content-type",
+              "value": "application/json"
+            }
+          ],
+          "cookie": [],
+          "body": "{\n    \"conversation_id\": \"string\",\n    \"deleted_count\": 2,\n    \"success\": true\n}"
+        }
+      ]
+    },
+    {
+      "name": "chat-id",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8000/api/v1/history/:id",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8000",
+          "path": [
+            "api",
+            "v1",
+            "history",
+            ":id"
+          ],
+          "variable": [
+            {
+              "key": "id",
+              "value": "88"
+            }
+          ]
+        }
+      },
+      "response": [
+        {
+          "name": "chat-id",
+          "originalRequest": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8000/api/v1/history/:id",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8000",
+              "path": [
+                "api",
+                "v1",
+                "history",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "string"
+                }
+              ]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": null,
+          "header": [
+            {
+              "key": "date",
+              "value": "Fri, 01 May 2026 12:57:23 GMT"
+            },
+            {
+              "key": "server",
+              "value": "uvicorn"
+            },
+            {
+              "key": "content-length",
+              "value": "795"
+            },
+            {
+              "key": "content-type",
+              "value": "application/json"
+            }
+          ],
+          "cookie": [],
+          "body": "{\n    \"conversation_id\": \"string\",\n    \"message_count\": 2,\n    \"messages\": [\n        {\n            \"id\": \"string_772bee34e7d44f9583610d711d23d954\",\n            \"role\": \"user\",\n            \"content\": \"หิวข้าวแกง\",\n            \"timestamp\": 1777640229.916416\n        },\n        {\n            \"id\": \"string_ab9ad65d5fd74dd5a6e56852ad22f8c7\",\n            \"role\": \"assistant\",\n            \"content\": \"Hungry for some good old-fashioned *khao gaeng*? Head to Chumphon’s Mu Ko Chumphon National Park — it’s a hidden gem with stunning sea views and fresh seafood right from the local boats! The laid-back island vibe fits your backpacker style, and you can enjoy a simple, delicious meal by the water after a hike through the mangrove forests or a swim among the limestone islands. Plus, it’s super budget-friendly and far from the crowds — perfect for a peaceful escape with nature.\",\n            \"timestamp\": 1777640230.154242\n        }\n    ]\n}"
+        }
+      ]
+    },
+    {
+      "name": "chai all",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8000/api/v1/history",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8000",
+          "path": [
+            "api",
+            "v1",
+            "history"
+          ]
+        }
+      },
+      "response": [
+        {
+          "name": "chai all",
+          "originalRequest": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8000/api/v1/history",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8000",
+              "path": [
+                "api",
+                "v1",
+                "history"
+              ]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": null,
+          "header": [
+            {
+              "key": "date",
+              "value": "Fri, 01 May 2026 12:57:30 GMT"
+            },
+            {
+              "key": "server",
+              "value": "uvicorn"
+            },
+            {
+              "key": "content-length",
+              "value": "846"
+            },
+            {
+              "key": "content-type",
+              "value": "application/json"
+            }
+          ],
+          "cookie": [],
+          "body": "{\n    \"total_conversations\": 1,\n    \"conversations\": [\n        {\n            \"conversation_id\": \"88\",\n            \"message_count\": 2,\n            \"messages\": [\n                {\n                    \"id\": \"88_c36a601dc1814074874c08dff8101fd5\",\n                    \"role\": \"user\",\n                    \"content\": \"หิวข้าวแกง\",\n                    \"timestamp\": 1777640235.687678\n                },\n                {\n                    \"id\": \"88_7f89cbf8afcc45eabe327b3580e81990\",\n                    \"role\": \"assistant\",\n                    \"content\": \"Hungry for some good old-fashioned *khao gaeng*? Head to Chumphon’s Mu Ko Chumphon National Park — it’s a hidden gem with stunning sea views and quiet beaches, perfect for your backpacker vibe. While it’s more nature-focused, you’ll find fresh seafood and simple local eats on nearby islands, matching your love for both noodles and seafood. Plus, it’s super low-key (only 3/10 crowd), ideal if you’re avoiding the masses. A little trek, a lot of serenity — and yes, dinner will be delicious.\",\n                    \"timestamp\": 1777640235.828438\n                }\n            ]\n        }\n    ]\n}"
+        }
+      ]
+    }
+  ]
+}
