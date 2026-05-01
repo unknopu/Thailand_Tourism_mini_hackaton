@@ -2,8 +2,43 @@
 
 AI Travel Matchmaker — matches travelers to Thailand destinations using RAG + Typhoon LLM.
 
-- **Backend**: FastAPI + ChromaDB + sentence-transformers → port `8000`
-- **Frontend**: Static HTML/CSS/JS served by nginx → port `80`
+---
+
+## Tech Stack
+
+### Frontend
+| Category | Technology |
+|----------|-----------|
+| Language | Vanilla JavaScript (ES6+), HTML5, CSS3 |
+| UI / Icons | Lucide Icons (CDN), CSS Custom Properties, Catppuccin Latte palette |
+| Fonts | Google Fonts — Sarabun (Thai), Nunito |
+| Markdown | marked.js |
+| State | localStorage (UUID-based user ID, conversation history, user profile) |
+| HTTP | Fetch API |
+| Server | Nginx (Alpine) — gzip, 1-year asset caching, SPA fallback |
+
+### Backend
+| Category | Technology |
+|----------|-----------|
+| Language | Python 3.13+ |
+| Framework | FastAPI 0.136 + Uvicorn 0.46 (ASGI) |
+| Data validation | Pydantic v2 |
+| LLM client | OpenAI Python SDK v2 → Typhoon v2.5-30B (custom base URL) |
+| Vector DB | ChromaDB 1.5 (cosine / HNSW, persistent) |
+| Embeddings | HuggingFace BAAI/bge-m3 via LangChain-HuggingFace |
+| ML stack | PyTorch, Sentence-Transformers, Transformers, scikit-learn, ONNX Runtime |
+| Data | Pandas, NumPy, SciPy |
+| Async / HTTP | httpx, uvloop, anyio, websockets |
+| Observability | OpenTelemetry (OTLP gRPC exporter) + LangSmith |
+| Config | python-dotenv, pydantic-settings |
+| Serialization | orjson |
+
+### Infrastructure
+| Category | Technology |
+|----------|-----------|
+| Containerisation | Docker + Docker Compose |
+| API style | REST + Server-Sent Events (streaming) |
+| CORS | Allow-all (development) |
 
 ---
 
@@ -22,6 +57,19 @@ For running the backend locally, also create `backend/.env` with the same conten
 
 ## Option 1 — Docker Compose
 
+### How it works
+
+| Service | Base image | Port | Notes |
+|---------|-----------|------|-------|
+| `backend` | `python:3.14-slim` | `8000` | On first start, runs `embeded.py` to build ChromaDB if `chroma_db/` is empty, then starts Uvicorn |
+| `frontend` | `nginx:alpine` | `80` | Serves static files with gzip + 1-year asset caching; starts after `backend` |
+
+- `./backend/chroma_db` is bind-mounted into the container so the vector store persists across restarts.
+- Backend env vars are loaded from `./backend/.env`.
+- Both services restart automatically (`unless-stopped`).
+
+### Commands
+
 ```bash
 # Build and start both containers
 docker compose up --build
@@ -29,17 +77,22 @@ docker compose up --build
 # Run in background
 docker compose up --build -d
 
-# Stop and remove containers
+# Stop containers (keeps volumes)
 docker compose down
+
+# Stop and remove the chroma_db bind-mount data
+docker compose down && rm -rf backend/chroma_db
 ```
 
-| Service       | URL                                        |
-|---------------|--------------------------------------------|
-| Frontend      | http://localhost                           |
-| Backend API   | http://localhost:8000/api/v1               |
-| Swagger docs  | http://localhost:8000/api/v1/docs          |
+### Service URLs
 
-**Access running containers:**
+| Service | URL |
+|---------|-----|
+| Frontend | http://localhost |
+| Backend API | http://localhost:8000/api/v1 |
+| Swagger docs | http://localhost:8000/api/v1/docs |
+
+### Useful container commands
 
 ```bash
 # Open a shell in the backend container
@@ -48,11 +101,12 @@ docker compose exec backend bash
 # Open a shell in the frontend container
 docker compose exec frontend sh
 
-# Stream backend logs
+# Stream logs
 docker compose logs -f backend
-
-# Stream frontend logs
 docker compose logs -f frontend
+
+# Rebuild ChromaDB embeddings manually inside the running backend container
+docker compose exec backend python embeded.py
 ```
 
 ---
