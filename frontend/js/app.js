@@ -7,10 +7,10 @@ const API_BASE = 'http://localhost:1323/api/v1';
 
 /* ─── Profile options ─── */
 const PROFILE_OPTIONS = {
-  favourite_province: ['กรุงเทพฯ', 'เชียงใหม่', 'เชียงราย', 'ภูเก็ต', 'กระบี่', 'สุราษฎร์ธานี', 'พัทยา', 'ขอนแก่น', 'นครราชสีมา', 'เพชรบุรี', 'ประจวบคีรีขันธ์', 'น่าน', 'อยุธยา', 'กาญจนบุรี'],
-  style:              ['backpacker', 'ธรรมชาติ', 'หรูหรา', 'ผจญภัย', 'วัฒนธรรม', 'ครอบครัว', 'โรแมนติก', 'ถ่ายรูป'],
-  food:               ['ก๋วยเตี๋ยว', 'ซีฟู้ด', 'ส้มตำ', 'ข้าวมันไก่', 'ผัดไทย', 'ลาบ', 'มังสวิรัติ', 'สตรีทฟู้ด', 'อาหารเหนือ', 'อาหารอีสาน'],
-  transportation:     ['รถไฟ', 'เครื่องบิน', 'รถบัส', 'รถยนต์', 'มอเตอร์ไซค์', 'เรือ'],
+  favourite_province: ['Bangkok', 'Chiang Mai', 'Chumphon', 'Ratchaburi', 'Yala', 'Chonburi'],
+  style:              ['backpacker', 'nature', 'luxury', 'adventure', 'culture', 'family', 'romantic', 'photography'],
+  food:               ['Noodle soup', 'Seafood', 'Som Tum', 'Hainanese chicken rice', 'Pad Thai', 'Larb', 'Vegetarian', 'Street food', 'Northern Thai food', 'Northeastern Thai food'],
+  transportation:     ['train', 'plane', 'bus', 'car', 'motorcycle', 'boat'],
 };
 
 /* ─── State ─── */
@@ -196,15 +196,54 @@ function appendAssistantMessage(text, streaming = false) {
       <div class="assistant-avatar">
         <img src="assets/logo.svg" alt="AI" />
       </div>
-      <div class="assistant-content ${streaming ? 'typing-cursor' : ''}">${
-        text
-          ? (typeof marked !== 'undefined' ? marked.parse(text) : escapeHtml(text))
-          : '<div class="loading-dots"><span></span><span></span><span></span></div>'
-      }</div>
+      <div class="assistant-body">
+        <div class="assistant-content ${streaming ? 'typing-cursor' : ''}">${
+          text
+            ? (typeof marked !== 'undefined' ? marked.parse(text) : escapeHtml(text))
+            : '<div class="loading-dots"><span></span><span></span><span></span></div>'
+        }</div>
+        <div class="message-actions">
+          <button class="like-btn" title="Like this response">
+            <svg class="like-icon-outline" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14z"/><path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>
+            <svg class="like-icon-filled" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14z"/><path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>
+          </button>
+        </div>
+      </div>
     </div>`;
   dom.chatMessages.appendChild(row);
   scrollToBottom();
-  return row.querySelector('.assistant-content');
+
+  const contentEl = row.querySelector('.assistant-content');
+  const likeBtn   = row.querySelector('.like-btn');
+
+  // Restore liked state if content is already in favourites
+  if (text && state.userProfile?.favourite) {
+    const snippet = text.trim().slice(0, 300);
+    if (state.userProfile.favourite.includes(snippet)) {
+      likeBtn.classList.add('liked');
+    }
+  }
+
+  likeBtn.addEventListener('click', () => toggleLike(likeBtn, contentEl.innerText || contentEl.textContent));
+  return contentEl;
+}
+
+function toggleLike(btn, content) {
+  const snippet = (content || '').trim().slice(0, 300);
+  if (!snippet) return;
+
+  const profile = state.userProfile || { favourite_province: [], style: [], food: [], transportation: [], favourite: [] };
+  if (!profile.favourite) profile.favourite = [];
+
+  const idx = profile.favourite.indexOf(snippet);
+  if (idx === -1) {
+    profile.favourite.push(snippet);
+    btn.classList.add('liked');
+  } else {
+    profile.favourite.splice(idx, 1);
+    btn.classList.remove('liked');
+  }
+  saveUserProfile(profile);
 }
 
 function renderMessages(messages) {
@@ -417,7 +456,7 @@ let profileDraft = {};
 function openProfileModal() {
   profileDraft = state.userProfile
     ? JSON.parse(JSON.stringify(state.userProfile))
-    : { favourite_province: [], style: [], food: [], transportation: [] };
+    : { favourite_province: [], style: [], food: [], transportation: [], favourite: [] };
   renderAllChips();
   dom.profileBackdrop.classList.add('open');
 }

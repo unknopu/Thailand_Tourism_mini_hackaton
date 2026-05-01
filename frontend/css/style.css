@@ -330,10 +330,45 @@ body {
   filter: brightness(0) invert(1);
 }
 
+.assistant-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
 .assistant-content {
   flex: 1;
   min-width: 0;
 }
+
+/* Hide actions while streaming; shown once cursor is gone */
+.assistant-content.typing-cursor ~ .message-actions { display: none; }
+
+.message-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.like-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  transition: color 0.15s, background 0.15s;
+}
+.like-btn:hover { color: var(--accent); background: rgba(16,163,127,0.1); }
+.like-btn.liked  { color: var(--accent); }
+
+.like-btn .like-icon-filled { display: none; }
+.like-btn.liked .like-icon-outline { display: none; }
+.like-btn.liked .like-icon-filled  { display: block; }
 
 /* Markdown inside assistant */
 .assistant-content p  { margin-bottom: 10px; }
