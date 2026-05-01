@@ -15,10 +15,11 @@ const PROFILE_OPTIONS = {
 
 /* ─── Profile section config ─── */
 const PROFILE_SECTIONS = [
-  { containerId: 'chipsProvince',  key: 'favourite_province', label: 'Favourite Provinces', icon: 'map-pin'     },
-  { containerId: 'chipsStyle',     key: 'style',              label: 'Travel Style',         icon: 'backpack'    },
-  { containerId: 'chipsFood',      key: 'food',               label: 'Favourite Food',       icon: 'utensils'    },
-  { containerId: 'chipsTransport', key: 'transportation',     label: 'Getting Around',       icon: 'train-front' },
+  { containerId: 'chipsName',      key: 'display_name',       label: 'Your Name',            icon: 'user',        type: 'text' },
+  { containerId: 'chipsProvince',  key: 'favourite_province', label: 'Favourite Provinces',  icon: 'map-pin'      },
+  { containerId: 'chipsStyle',     key: 'style',              label: 'Travel Style',          icon: 'backpack'     },
+  { containerId: 'chipsFood',      key: 'food',               label: 'Favourite Food',        icon: 'utensils'     },
+  { containerId: 'chipsTransport', key: 'transportation',     label: 'Getting Around',        icon: 'train-front'  },
 ];
 
 /* ─── State ─── */
@@ -49,8 +50,14 @@ const dom = {
   modalCancel:      $('modalCancel'),
   modalConfirm:     $('modalConfirm'),
   profileBackdrop:  $('profileBackdrop'),
-  profileSaveBtn:   $('profileSaveBtn'),
+  profileNextBtn:   $('profileNextBtn'),
+  profileBackBtn:   $('profileBackBtn'),
   profileSkipBtn:   $('profileSkipBtn'),
+  savedBackdrop:    $('savedBackdrop'),
+  savedPlacesBtn:   $('savedPlacesBtn'),
+  savedList:        $('savedList'),
+  savedEmpty:       $('savedEmpty'),
+  savedCloseBtn:    $('savedCloseBtn'),
 };
 
 /* ─── Lucide helper ─── */
@@ -123,8 +130,13 @@ function saveUserProfile(profile) {
 function updateProfileBtn() {
   if (state.userProfile) {
     dom.editProfileBtn.classList.add('has-profile');
+    const name = state.userProfile.display_name?.trim();
+    const label = dom.editProfileBtn.querySelector('.btn-label');
+    if (label) label.textContent = name || 'Profile';
   } else {
     dom.editProfileBtn.classList.remove('has-profile');
+    const label = dom.editProfileBtn.querySelector('.btn-label');
+    if (label) label.textContent = 'Profile';
   }
 }
 
@@ -217,12 +229,111 @@ function hideWelcome() {
   if (dom.welcomeScreen) dom.welcomeScreen.style.display = 'none';
 }
 
+const WELCOME_CHIPS_DEFAULT = [
+  { icon: 'map-pin',    text: 'What are the best hidden gems in Thailand?' },
+  { icon: 'waves',      text: 'Best beach destinations for a relaxing trip' },
+  { icon: 'utensils',   text: 'Must-try Thai street food experiences' },
+  { icon: 'tent',       text: 'Nature stays and eco resorts in Thailand' },
+  { icon: 'camera',     text: 'Most photogenic spots in Thailand' },
+  { icon: 'backpack',   text: 'Budget travel tips for exploring Thailand' },
+];
+
+const PROVINCE_CHIPS = {
+  'Bangkok': [
+    { icon: 'utensils',    text: 'Best street food in Bangkok' },
+    { icon: 'landmark',    text: 'Top temples to visit in Bangkok' },
+    { icon: 'shopping-bag',text: 'Best night markets in Bangkok' },
+    { icon: 'ship',        text: 'Chao Phraya river activities in Bangkok' },
+    { icon: 'camera',      text: 'Most Instagrammable spots in Bangkok' },
+    { icon: 'coffee',      text: 'Best cafes in Bangkok' },
+  ],
+  'Chiang Mai': [
+    { icon: 'mountain',    text: 'Best viewpoints in Chiang Mai' },
+    { icon: 'landmark',    text: 'Ancient temples to visit in Chiang Mai' },
+    { icon: 'tent',        text: 'Nature retreats near Chiang Mai' },
+    { icon: 'utensils',    text: 'Northern Thai food to try in Chiang Mai' },
+    { icon: 'bike',        text: 'Cycling routes around Chiang Mai' },
+    { icon: 'camera',      text: 'Photography spots in Chiang Mai' },
+  ],
+  'Chumphon': [
+    { icon: 'waves',       text: 'Best beaches in Chumphon' },
+    { icon: 'fish',        text: 'Diving spots near Chumphon' },
+    { icon: 'tent',        text: 'Eco stays in Chumphon' },
+    { icon: 'utensils',    text: 'Seafood restaurants in Chumphon' },
+    { icon: 'map-pin',     text: 'Hidden gems in Chumphon' },
+    { icon: 'sailboat',    text: 'Island hopping from Chumphon' },
+  ],
+  'Ratchaburi': [
+    { icon: 'map-pin',     text: 'Things to do in Ratchaburi' },
+    { icon: 'landmark',    text: 'Cultural sites in Ratchaburi' },
+    { icon: 'utensils',    text: 'Local food to try in Ratchaburi' },
+    { icon: 'tree-pine',   text: 'Nature spots in Ratchaburi' },
+    { icon: 'camera',      text: 'Best photo spots in Ratchaburi' },
+    { icon: 'shopping-bag',text: 'Markets in Ratchaburi' },
+  ],
+  'Yala': [
+    { icon: 'map-pin',     text: 'Top attractions in Yala' },
+    { icon: 'landmark',    text: 'Historical sites in Yala' },
+    { icon: 'utensils',    text: 'Southern Thai food in Yala' },
+    { icon: 'tree-pine',   text: 'Nature parks in Yala' },
+    { icon: 'camera',      text: 'Scenic spots in Yala' },
+    { icon: 'coffee',      text: 'Best cafes in Yala' },
+  ],
+  'Chonburi': [
+    { icon: 'waves',       text: 'Best beaches in Chonburi' },
+    { icon: 'utensils',    text: 'Seafood spots in Chonburi' },
+    { icon: 'map-pin',     text: 'Top attractions near Pattaya' },
+    { icon: 'fish',        text: 'Water activities in Chonburi' },
+    { icon: 'shopping-bag',text: 'Night markets in Chonburi' },
+    { icon: 'camera',      text: 'Most scenic spots in Chonburi' },
+  ],
+};
+
+function getWelcomeChips() {
+  const provinces = state.userProfile?.favourite_province;
+  if (!provinces || provinces.length === 0) return WELCOME_CHIPS_DEFAULT;
+
+  const pool = provinces.flatMap(p => PROVINCE_CHIPS[p] || []);
+  if (pool.length === 0) return WELCOME_CHIPS_DEFAULT;
+
+  // shuffle and take up to 6
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  return pool.slice(0, 6);
+}
+
+function renderWelcomeChips() {
+  const container = document.getElementById('welcomeSuggestions');
+  if (!container) return;
+  container.innerHTML = '';
+  getWelcomeChips().forEach(({ icon, text }) => {
+    const btn = document.createElement('button');
+    btn.className = 'welcome-chip';
+    btn.innerHTML = `<i data-lucide="${icon}"></i>${text}`;
+    btn.addEventListener('click', () => {
+      dom.messageInput.value = text;
+      dom.sendBtn.disabled = false;
+      const wrap = document.getElementById('welcomeVideoWrap');
+      if (wrap) wrap.classList.add('hidden');
+      handleSend();
+    });
+    container.appendChild(btn);
+  });
+  initIcons(container);
+}
+
 function showWelcome() {
   if (dom.welcomeScreen) dom.welcomeScreen.style.display = '';
+  const wrap = document.getElementById('welcomeVideoWrap');
+  if (wrap) wrap.classList.remove('hidden');
+  updateWelcomeGreeting();
+  renderWelcomeChips();
 }
 
 function clearMessages() {
-  dom.chatMessages.querySelectorAll('.message-row').forEach(el => el.remove());
+  dom.chatMessages.querySelectorAll('.message-row, .suggested-prompts').forEach(el => el.remove());
 }
 
 function appendUserMessage(text) {
@@ -240,7 +351,7 @@ function appendAssistantMessage(text, streaming = false) {
   row.innerHTML = `
     <div class="message-bubble">
       <div class="assistant-avatar">
-        <img src="assets/logo.svg" alt="Guidy" />
+        <img src="assets/logo.png" alt="Guidy" />
       </div>
       <div class="assistant-body">
         <div class="assistant-content ${streaming ? 'typing-cursor' : ''}">${
@@ -306,6 +417,76 @@ function renderMessages(messages) {
   });
 }
 
+/* ══════════════════════════════════════════
+   SUGGESTED PROMPTS
+══════════════════════════════════════════ */
+function removeSuggestedPrompts() {
+  dom.chatMessages.querySelectorAll('.suggested-prompts').forEach(el => el.remove());
+}
+
+function renderSuggestedPrompts(prompts, topPlace) {
+  if (!prompts || prompts.length === 0) return;
+
+  const row = document.createElement('div');
+  row.className = 'suggested-prompts';
+
+  prompts.forEach(prompt => {
+    const btn = document.createElement('button');
+    btn.className = 'suggested-prompt-btn';
+    btn.textContent = prompt;
+
+    const isSavePrompt = prompt.startsWith('Save ') && prompt.endsWith(' to my list');
+
+    if (isSavePrompt) {
+      btn.classList.add('save-btn');
+    } else if (prompt.startsWith("That's all")) {
+      btn.classList.add('end-btn');
+    }
+
+    btn.addEventListener('click', () => {
+      removeSuggestedPrompts();
+
+      if (isSavePrompt) {
+        const placeName = topPlace?.name || topPlace || null;
+        if (placeName) {
+          const profile = state.userProfile || {
+            favourite_province: [], style: [], food: [],
+            transportation: [], favourite: [], saved_location: [],
+          };
+          if (!profile.saved_location) profile.saved_location = [];
+          if (!profile.saved_location.includes(placeName)) {
+            profile.saved_location.push(placeName);
+            saveUserProfile(profile);
+            appendAssistantMessage(`✅ Saved **${placeName}** to your list!`);
+          } else {
+            appendAssistantMessage(`📍 **${placeName}** is already in your saved list.`);
+          }
+        } else {
+          appendAssistantMessage("I couldn't find a place to save. Try asking for a recommendation first!");
+        }
+        scrollToBottom();
+        return;
+      }
+
+      if (prompt.startsWith("That's all")) {
+        appendAssistantMessage("You're welcome! Have a wonderful trip to Thailand! 🇹🇭 Feel free to ask me anytime.");
+        scrollToBottom();
+        return;
+      }
+
+      dom.messageInput.value = prompt;
+      const wrap = document.getElementById('welcomeVideoWrap');
+      if (wrap) wrap.classList.add('hidden');
+      handleSend();
+    });
+
+    row.appendChild(btn);
+  });
+
+  dom.chatMessages.appendChild(row);
+  scrollToBottom();
+}
+
 function escapeHtml(str) {
   return str
     .replace(/&/g, '&amp;')
@@ -349,12 +530,21 @@ function newChat() {
   clearMessages();
   showWelcome();
   renderConversationList();
-  dom.messageInput.focus();
+
+  // If user already has a profile, let them quickly update province/interest
+  // preferences for this new chat (skip the name step, keep existing name).
+  if (state.userProfile) {
+    openProfileModal(1);
+  } else {
+    dom.messageInput.focus();
+  }
 }
 
 /* Send message — POST /api/v1/recommend */
 async function sendMessage(text) {
   if (state.streaming || !text.trim()) return;
+
+  removeSuggestedPrompts();
 
   if (!state.activeId) newChat();
 
@@ -390,7 +580,7 @@ async function sendMessage(text) {
     const reqBody = {
       message:         text,
       conversation_id: convId,
-      nick_name:       state.userId,
+      nickname:        (state.userProfile?.display_name?.trim()) || state.userId,
       user_profile,
     };
 
@@ -406,11 +596,17 @@ async function sendMessage(text) {
     }
 
     const data  = await res.json();
-    const reply = data.response || '';
+    const reply = data.ai_reason || data.response || '';
 
     contentEl.innerHTML = typeof marked !== 'undefined'
       ? marked.parse(reply)
       : escapeHtml(reply);
+
+    const suggestedPrompts = data.suggested_prompts || [];
+    const topPlace = (data.recommendations || [])[0] || null;
+    if (suggestedPrompts.length > 0) {
+      renderSuggestedPrompts(suggestedPrompts, topPlace);
+    }
 
   } catch (err) {
     contentEl.innerHTML = `<span style="color:var(--danger)">${escapeHtml(err.message)}</span>`;
@@ -443,70 +639,286 @@ async function deleteHistory(id) {
     showWelcome();
     dom.chatTitleText.textContent = 'New Chat';
     dom.deleteHistoryBtn.style.display = 'none';
+    if (!state.userProfile) openProfileModal();
   }
 }
 
 /* ══════════════════════════════════════════
-   PROFILE MODAL
+   PROFILE MODAL — step-by-step
 ══════════════════════════════════════════ */
-let profileDraft = {};
+let profileDraft       = {};
+let currentStep        = 0;
+let profileModalStartStep = 0; // lowest step reachable (1 when opened from New Chat)
+let stepDirection      = 'forward'; // 'forward' | 'back'
+let isSummaryStep      = false;
 
-function openProfileModal() {
+const domProfile = {
+  get container()  { return $('profileStepsContainer'); },
+  get dots()       { return $('profileStepsDots'); },
+  get skipBtn()    { return $('profileSkipBtn'); },
+  get backBtn()    { return $('profileBackBtn'); },
+  get nextBtn()    { return $('profileNextBtn'); },
+};
+
+function openProfileModal(startStep = 0) {
   profileDraft = state.userProfile
     ? JSON.parse(JSON.stringify(state.userProfile))
-    : { favourite_province: [], style: [], food: [], transportation: [], favourite: [] };
-  renderAllChips();
+    : { display_name: '', favourite_province: [], style: [], food: [], transportation: [], favourite: [] };
+  if (profileDraft.display_name === undefined) profileDraft.display_name = '';
+  if (!Array.isArray(profileDraft.favourite_province)) profileDraft.favourite_province = [];
+
+  profileModalStartStep = startStep;
+  currentStep   = startStep;
+  isSummaryStep = false;
+  stepDirection = 'forward';
+
+  // Update modal header text to match context
+  const titleEl = dom.profileBackdrop.querySelector('.profile-modal-title');
+  const subEl   = dom.profileBackdrop.querySelector('.profile-modal-sub');
+  if (startStep > 0) {
+    if (titleEl) titleEl.textContent = 'Update preferences';
+    if (subEl)   subEl.textContent   = 'Adjust your interests for this new chat.';
+  } else {
+    if (titleEl) titleEl.textContent = 'Tell us about you';
+    if (subEl)   subEl.textContent   = 'Pick your preferences for personalised travel recommendations.';
+  }
+
+  renderStepDots();
+  renderCurrentStep();
+  updateStepFooter();
   dom.profileBackdrop.classList.add('open');
 }
 
 function closeProfileModal() {
   dom.profileBackdrop.classList.remove('open');
+  dom.messageInput.focus();
 }
 
-function renderAllChips() {
-  PROFILE_SECTIONS.forEach(({ containerId, key, label, icon }) => {
-    renderChipGroup(containerId, key, profileDraft[key] || [], label, icon);
+function renderStepDots() {
+  const dots = domProfile.dots;
+  dots.innerHTML = '';
+  PROFILE_SECTIONS.forEach((_, i) => {
+    const dot = document.createElement('div');
+    if (isSummaryStep) {
+      dot.className = 'profile-dot completed';
+    } else {
+      dot.className = 'profile-dot'
+        + (i === currentStep ? ' active' : '')
+        + (i < currentStep || i < profileModalStartStep ? ' completed' : '');
+    }
+    dots.appendChild(dot);
   });
 }
 
-function renderChipGroup(containerId, key, selected, sectionLabel, iconName) {
-  const container = $(containerId);
+function renderCurrentStep() {
+  const { key, label, icon, type } = PROFILE_SECTIONS[currentStep];
+  const container = domProfile.container;
   container.innerHTML = '';
 
-  // Section label with Lucide icon
-  if (sectionLabel) {
-    const labelEl = document.createElement('div');
-    labelEl.className = 'profile-section-label';
-    labelEl.innerHTML = `<i data-lucide="${iconName}"></i>${sectionLabel}`;
-    container.parentElement.insertBefore(labelEl, container);
-    // Remove any previously inserted label to avoid duplicates
-    const existing = container.parentElement.querySelectorAll('.profile-section-label');
-    if (existing.length > 1) existing[0].remove();
-    initIcons(labelEl);
+  const card = document.createElement('div');
+  card.className = 'profile-step-card ' + (stepDirection === 'forward' ? 'slide-in-right' : 'slide-in-left');
+
+  const labelEl = document.createElement('div');
+  labelEl.className = 'profile-section-label';
+  labelEl.innerHTML = `<i data-lucide="${icon}"></i>${label}`;
+  card.appendChild(labelEl);
+  initIcons(labelEl);
+
+  if (type === 'text') {
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'profile-text-input';
+    input.placeholder = 'Enter your name…';
+    input.maxLength = 40;
+    input.value = profileDraft[key] || '';
+    input.addEventListener('input', () => { profileDraft[key] = input.value; });
+    card.appendChild(input);
+    setTimeout(() => input.focus(), 320);
+  } else {
+    const chips = document.createElement('div');
+    chips.className = 'profile-chips';
+
+    const selected = profileDraft[key] || [];
+    PROFILE_OPTIONS[key].forEach(option => {
+      const chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'profile-chip' + (selected.includes(option) ? ' selected' : '');
+      chip.textContent = option;
+      chip.addEventListener('click', () => {
+        const arr = profileDraft[key] || [];
+        const idx = arr.indexOf(option);
+        if (idx === -1) arr.push(option); else arr.splice(idx, 1);
+        profileDraft[key] = arr;
+        chip.classList.toggle('selected', profileDraft[key].includes(option));
+      });
+      chips.appendChild(chip);
+    });
+
+    card.appendChild(chips);
   }
 
-  PROFILE_OPTIONS[key].forEach(option => {
-    const chip = document.createElement('button');
-    chip.type = 'button';
-    chip.className = 'profile-chip' + (selected.includes(option) ? ' selected' : '');
-    chip.textContent = option;
-    chip.addEventListener('click', () => {
-      const arr = profileDraft[key] || [];
-      const idx = arr.indexOf(option);
-      if (idx === -1) arr.push(option); else arr.splice(idx, 1);
-      profileDraft[key] = arr;
-      renderChipGroup(containerId, key, arr, sectionLabel, iconName);
-    });
-    container.appendChild(chip);
-  });
+  container.appendChild(card);
 }
 
-dom.profileSaveBtn.addEventListener('click', () => {
-  saveUserProfile(profileDraft);
-  closeProfileModal();
+function updateStepFooter() {
+  const skip = domProfile.skipBtn;
+  const back = domProfile.backBtn;
+  const next = domProfile.nextBtn;
+
+  if (isSummaryStep) {
+    skip.style.display = 'none';
+    back.style.display = 'none';
+    next.textContent   = 'Start Exploring!';
+    return;
+  }
+
+  const isFirst = currentStep === profileModalStartStep;
+  const isLast  = currentStep === PROFILE_SECTIONS.length - 1;
+
+  skip.style.display = '';
+  skip.textContent   = isFirst ? 'Skip for now' : 'Skip';
+  back.style.display = isFirst ? 'none' : '';
+  next.textContent   = isLast  ? 'Save & Start' : 'Next';
+}
+
+function goToStep(index, direction) {
+  isSummaryStep = false;
+  stepDirection = direction;
+  currentStep   = index;
+  renderStepDots();
+  renderCurrentStep();
+  updateStepFooter();
+}
+
+function renderProfileSummaryStep() {
+  const container = domProfile.container;
+  container.innerHTML = '';
+
+  const card = document.createElement('div');
+  card.className = 'profile-step-card slide-in-right';
+
+  const name = (profileDraft.display_name || '').trim() || 'Traveller';
+  const isUpdate = profileModalStartStep > 0;
+
+  const greet = document.createElement('div');
+  greet.className = 'profile-summary-greeting';
+  greet.textContent = isUpdate ? `Ready to explore, ${name}!` : `Welcome, ${name}!`;
+  card.appendChild(greet);
+
+  const subtitle = document.createElement('div');
+  subtitle.className = 'profile-summary-subtitle';
+  subtitle.textContent = isUpdate
+    ? "Preferences updated for this chat:"
+    : "Here's your travel profile:";
+  card.appendChild(subtitle);
+
+  const summarySections = [
+    { label: 'Provinces',     key: 'favourite_province', icon: 'map-pin'    },
+    { label: 'Travel Style',  key: 'style',              icon: 'backpack'   },
+    { label: 'Food',          key: 'food',               icon: 'utensils'   },
+    { label: 'Transport',     key: 'transportation',     icon: 'train-front'},
+  ];
+
+  let hasAny = false;
+  summarySections.forEach(({ label, key, icon }) => {
+    const items = profileDraft[key] || [];
+    if (items.length === 0) return;
+    hasAny = true;
+
+    const section = document.createElement('div');
+    section.className = 'profile-summary-section';
+
+    const sectionLabel = document.createElement('div');
+    sectionLabel.className = 'profile-summary-label';
+    sectionLabel.innerHTML = `<i data-lucide="${icon}"></i>${label}`;
+    section.appendChild(sectionLabel);
+
+    const tags = document.createElement('div');
+    tags.className = 'profile-summary-tags';
+    items.forEach(item => {
+      const tag = document.createElement('span');
+      tag.className = 'profile-summary-tag';
+      tag.textContent = item;
+      tags.appendChild(tag);
+    });
+    section.appendChild(tags);
+    card.appendChild(section);
+  });
+
+  if (!hasAny) {
+    const empty = document.createElement('p');
+    empty.className = 'profile-summary-empty';
+    empty.textContent = 'No preferences selected — we\'ll recommend the best of Thailand for you!';
+    card.appendChild(empty);
+  }
+
+  container.appendChild(card);
+  initIcons(card);
+}
+
+function updateWelcomeGreeting() {
+  const titleEl = document.querySelector('.welcome-title');
+  const subEl   = document.querySelector('.welcome-sub');
+  if (!titleEl || !subEl) return;
+  const name = state.userProfile?.display_name?.trim();
+  if (name) {
+    titleEl.textContent = `Hi ${name}, where do you want to go?`;
+    subEl.textContent   = 'Tell Guidy your dream destination.';
+  } else {
+    titleEl.textContent = 'Where do you want to go?';
+    subEl.textContent   = 'Tell Guidy your dream destination.';
+  }
+}
+
+domProfile.nextBtn.addEventListener('click', () => {
+  if (isSummaryStep) {
+    closeProfileModal();
+    return;
+  }
+  if (currentStep < PROFILE_SECTIONS.length - 1) {
+    goToStep(currentStep + 1, 'forward');
+  } else {
+    saveUserProfile(profileDraft);
+    renderWelcomeChips();
+    updateWelcomeGreeting();
+    isSummaryStep = true;
+    renderProfileSummaryStep();
+    renderStepDots();
+    updateStepFooter();
+  }
 });
 
-dom.profileSkipBtn.addEventListener('click', closeProfileModal);
+domProfile.backBtn.addEventListener('click', () => {
+  if (currentStep > profileModalStartStep) goToStep(currentStep - 1, 'back');
+});
+
+domProfile.skipBtn.addEventListener('click', () => {
+  if (currentStep <= profileModalStartStep) {
+    closeProfileModal();
+  } else {
+    goToStep(currentStep - 1, 'back');
+  }
+});
+
+document.getElementById('profileResetBtn').addEventListener('click', () => {
+  localStorage.removeItem('guidyth_user_profile');
+  state.userProfile = null;
+  updateProfileBtn();
+  profileDraft          = { display_name: '', favourite_province: [], style: [], food: [], transportation: [], favourite: [] };
+  currentStep           = 0;
+  profileModalStartStep = 0;
+  isSummaryStep         = false;
+  stepDirection         = 'forward';
+
+  const titleEl = dom.profileBackdrop.querySelector('.profile-modal-title');
+  const subEl   = dom.profileBackdrop.querySelector('.profile-modal-sub');
+  if (titleEl) titleEl.textContent = 'Tell us about you';
+  if (subEl)   subEl.textContent   = 'Pick your preferences for personalised travel recommendations.';
+  renderStepDots();
+  renderCurrentStep();
+  updateStepFooter();
+});
+
 dom.editProfileBtn.addEventListener('click', openProfileModal);
 
 /* ══════════════════════════════════════════
@@ -531,6 +943,64 @@ dom.modalBackdrop.addEventListener('click', e => {
 dom.modalConfirm.addEventListener('click', async () => {
   if (pendingDeleteId) await deleteHistory(pendingDeleteId);
   closeDeleteModal();
+});
+
+/* ══════════════════════════════════════════
+   SAVED PLACES MODAL
+══════════════════════════════════════════ */
+function openSavedModal() {
+  renderSavedList();
+  dom.savedBackdrop.classList.add('open');
+  initIcons(dom.savedBackdrop);
+}
+
+function closeSavedModal() {
+  dom.savedBackdrop.classList.remove('open');
+}
+
+function renderSavedList() {
+  dom.savedList.innerHTML = '';
+  const saved = state.userProfile?.saved_location || [];
+
+  if (saved.length === 0) {
+    dom.savedEmpty.style.display = '';
+    dom.savedList.style.display = 'none';
+    return;
+  }
+
+  dom.savedEmpty.style.display = 'none';
+  dom.savedList.style.display = '';
+
+  saved.forEach((place, idx) => {
+    const li = document.createElement('li');
+    li.className = 'saved-item';
+
+    const nameEl = document.createElement('span');
+    nameEl.className = 'saved-item-name';
+    nameEl.innerHTML = `<i data-lucide="map-pin"></i>${place}`;
+
+    const removeBtn = document.createElement('button');
+    removeBtn.className = 'saved-item-remove';
+    removeBtn.title = 'Remove';
+    removeBtn.innerHTML = '<i data-lucide="x"></i>';
+    removeBtn.addEventListener('click', () => {
+      const profile = state.userProfile || {};
+      profile.saved_location = (profile.saved_location || []).filter((_, i) => i !== idx);
+      saveUserProfile(profile);
+      renderSavedList();
+      initIcons(dom.savedList);
+    });
+
+    li.appendChild(nameEl);
+    li.appendChild(removeBtn);
+    dom.savedList.appendChild(li);
+  });
+}
+
+dom.savedPlacesBtn.addEventListener('click', openSavedModal);
+dom.savedCloseBtn.addEventListener('click', closeSavedModal);
+dom.savedBackdrop.addEventListener('click', e => {
+  if (e.target === dom.savedBackdrop) closeSavedModal();
 });
 
 /* ══════════════════════════════════════════
@@ -567,6 +1037,8 @@ function handleSend() {
   dom.messageInput.value = '';
   dom.messageInput.style.height = 'auto';
   dom.sendBtn.disabled = true;
+  const wrap = document.getElementById('welcomeVideoWrap');
+  if (wrap) wrap.classList.add('hidden');
   sendMessage(text);
 }
 
@@ -601,7 +1073,14 @@ document.addEventListener('click', e => {
     showWelcome();
   }
 
-  if (!state.userProfile) openProfileModal();
+  const splash = document.getElementById('splashScreen');
+  setTimeout(() => {
+    if (splash) splash.classList.add('fade-out');
+    setTimeout(() => {
+      if (splash) splash.style.display = 'none';
+      if (!state.userProfile) openProfileModal();
+    }, 500);
+  }, 2000);
 
   console.log(`GuidyTH — User ID: ${state.userId}`);
 })();

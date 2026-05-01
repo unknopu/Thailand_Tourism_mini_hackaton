@@ -4,21 +4,31 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>GuidyTH</title>
+  <link rel="icon" type="image/png" href="assets/logo.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700;800&family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
   <link rel="stylesheet" href="css/style.css" />
   <script src="js/marked.min.js"></script>
 </head>
 <body>
 
+  <!-- ════════════ SPLASH SCREEN ════════════ -->
+  <div id="splashScreen" class="splash-screen">
+    <div class="splash-content">
+      <img src="assets/logo.png" alt="GuidyTH" class="splash-logo" />
+      <h1 class="splash-title">GuidyTH</h1>
+      <p class="splash-slogan">Your Personal AI Travel Companion in Thailand</p>
+    </div>
+  </div>
+
   <!-- ════════════ SIDEBAR ════════════ -->
   <aside class="sidebar" id="sidebar">
 
     <div class="sidebar-top">
       <div class="logo-area">
-        <img src="assets/logo.svg" alt="GuidyTH" class="sidebar-logo" />
+        <img src="assets/logo.png" alt="GuidyTH" class="sidebar-logo" />
         <span class="sidebar-brand">GuidyTH</span>
       </div>
       <button class="new-chat-btn" id="newChatBtn" title="New chat">
@@ -47,6 +57,10 @@
         <i data-lucide="panel-left"></i>
       </button>
       <span class="chat-title-text" id="chatTitleText">New Chat</span>
+      <button class="saved-places-btn" id="savedPlacesBtn" title="View saved places">
+        <i data-lucide="bookmark"></i>
+        <span class="btn-label">Saved</span>
+      </button>
       <button class="edit-profile-btn" id="editProfileBtn" title="Edit your travel profile">
         <i data-lucide="user-round"></i>
         <span class="btn-label">Profile</span>
@@ -62,11 +76,14 @@
 
       <!-- Welcome screen -->
       <div class="welcome-screen" id="welcomeScreen">
-        <div class="welcome-icon">
-          <i data-lucide="compass"></i>
+        <div class="welcome-video-wrap" id="welcomeVideoWrap">
+          <video id="welcomeVideo" class="welcome-video" autoplay loop muted playsinline>
+            <source src="assets/animate.mp4" type="video/mp4" />
+          </video>
         </div>
         <h1 class="welcome-title">Where do you want to go?</h1>
         <p class="welcome-sub">Tell Guidy your dream destination.</p>
+        <div class="welcome-suggestions" id="welcomeSuggestions"></div>
       </div>
 
     </section>
@@ -104,6 +121,29 @@
     </div>
   </div>
 
+  <!-- ════════════ SAVED PLACES MODAL ════════════ -->
+  <div class="saved-backdrop" id="savedBackdrop">
+    <div class="saved-modal">
+      <div class="saved-modal-header">
+        <div class="saved-modal-icon">
+          <i data-lucide="bookmark"></i>
+        </div>
+        <h2 class="saved-modal-title">Saved Places</h2>
+        <p class="saved-modal-sub">Places you've bookmarked during your chats.</p>
+        <button class="saved-close-btn" id="savedCloseBtn" title="Close">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+      <ul class="saved-list" id="savedList">
+        <!-- injected by JS -->
+      </ul>
+      <div class="saved-empty" id="savedEmpty" style="display:none">
+        <i data-lucide="map-pin-off"></i>
+        <p>No saved places yet.<br>Ask Guidy for a recommendation and tap <strong>Save this place</strong>.</p>
+      </div>
+    </div>
+  </div>
+
   <!-- ════════════ PROFILE MODAL ════════════ -->
   <div class="profile-backdrop" id="profileBackdrop">
     <div class="profile-modal">
@@ -113,24 +153,16 @@
         </div>
         <h2 class="profile-modal-title">Tell us about you</h2>
         <p class="profile-modal-sub">Pick your preferences for personalised travel recommendations.</p>
+        <div class="profile-steps-dots" id="profileStepsDots"></div>
       </div>
-      <div class="profile-modal-body">
-        <div class="profile-section">
-          <div class="profile-chips" id="chipsProvince"></div>
-        </div>
-        <div class="profile-section">
-          <div class="profile-chips" id="chipsStyle"></div>
-        </div>
-        <div class="profile-section">
-          <div class="profile-chips" id="chipsFood"></div>
-        </div>
-        <div class="profile-section">
-          <div class="profile-chips" id="chipsTransport"></div>
-        </div>
+      <div class="profile-steps-container" id="profileStepsContainer">
+        <!-- step cards injected by JS -->
       </div>
       <div class="profile-modal-footer">
         <button class="profile-skip-btn" id="profileSkipBtn">Skip for now</button>
-        <button class="profile-save-btn" id="profileSaveBtn">Save &amp; Start</button>
+        <button class="profile-reset-btn" id="profileResetBtn" title="Clear all profile data">Reset</button>
+        <button class="profile-back-btn" id="profileBackBtn">Back</button>
+        <button class="profile-next-btn" id="profileNextBtn">Next</button>
       </div>
     </div>
   </div>

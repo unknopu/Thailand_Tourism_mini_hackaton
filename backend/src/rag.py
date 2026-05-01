@@ -24,7 +24,7 @@ client = chromadb.PersistentClient(
     path=CHROMA_DB_PATH,
     settings=Settings(anonymized_telemetry=False)
 )
-collection = client.get_collection(name=COLLECTION_NAME)
+collection = client.get_or_create_collection(name=COLLECTION_NAME)
 
 print("🔄 Loading Embedding Model (BGE-M3)...")
 embeddings = HuggingFaceEmbeddings(
@@ -94,24 +94,42 @@ def build_search_query(user_profile: dict, message: str = "") -> str:
 # Step 2: Search + Calculate Match Score
 # =============================================================================
 
+# Provinces that have actual data in the database
+PROVINCES_WITH_DATA = {'Chumphon', 'Ratchaburi', 'Yala', 'Chonburi'}
+
+
 def get_recommendations(user_profile: dict, message: str = "", top_k: int = 5) -> list:
     """
     Search ChromaDB and calculate Match Score.
 
     Match Score formula:
-    (Similarity * 0.5) + (Hidden_Gem * 0.3) + ((1 - Crowd_Level/10) * 0.2)
+    (Similarity * 0.7) + (Hidden_Gem * 0.2) + ((1 - Crowd_Level/10) * 0.1)
+
+    Similarity has the highest weight so that the user's actual query drives
+    rankings. Static bias from hidden_gem_score is kept small to avoid the
+    same high-scoring places always winning regardless of the query.
 
     Bonus: +0.05 if place style/tags matches saved_location context
     """
     search_query = build_search_query(user_profile, message)
 
-    # Retrieve top 10 candidates for reranking
+    # Retrieve top 10 candidates for reranking.
+    # When the user has selected provinces that exist in the database, filter
+    # the search to those provinces so results are actually relevant.
     query_embedding = embeddings.embed_query(search_query)
-    results = collection.query(
+
+    fav_provinces = user_profile.get('favourite_province', [])
+    provinces_in_data = [p for p in fav_provinces if p in PROVINCES_WITH_DATA]
+
+    query_kwargs = dict(
         query_embeddings=[query_embedding],
         n_results=10,
-        include=["documents", "metadatas", "distances"]
+        include=["documents", "metadatas", "distances"],
     )
+    if provinces_in_data:
+        query_kwargs['where'] = {"province": {"$in": provinces_in_data}}
+
+    results = collection.query(**query_kwargs)
 
     # Build saved_location set for bonus scoring
     saved_locations = set(
@@ -133,11 +151,12 @@ def get_recommendations(user_profile: dict, message: str = "", top_k: int = 5) -
         name_th = meta.get('name_th', '')
         place_name = name_en or name_th or meta.get('province', 'Unknown Place')
 
-        # Base match score
+        # Base match score — similarity has the dominant weight so the user's
+        # query drives results rather than static hidden_gem / crowd bias.
         match_score = (
-            (similarity_score * 0.5)
-            + (hidden_gem_score * 0.3)
-            + ((1 - (crowd_level / 10)) * 0.2)
+            (similarity_score * 0.7)
+            + (hidden_gem_score * 0.2)
+            + ((1 - (crowd_level / 10)) * 0.1)
         )
 
         # 🌟 Saved-location bonus: boost places in same province/style as saved ones
@@ -181,23 +200,34 @@ def get_recommendations(user_profile: dict, message: str = "", top_k: int = 5) -
 # Step 3: AI Generation — answer message + explain recommendations
 # =============================================================================
 
-def _build_system_prompt(nickname: str | None) -> str:
-    if nickname:
-        return (
-            f"You are {nickname}, a friendly and knowledgeable Thailand travel guide. "
-            f"Your name is {nickname} — always introduce yourself as {nickname} when greeted, "
-            f"and naturally refer to yourself as {nickname} throughout the conversation. "
-            "Always respond in English. Keep answers short, natural, and conversational — "
-            "like a well-travelled friend giving advice. "
-            "If the user asks a specific question, answer it first, then introduce the recommended places. "
-            f"Remember: your name is {nickname}."
-        )
-    return (
-        "You are a friendly and knowledgeable Thailand travel guide. "
-        "Always respond in English. Keep answers short, natural, and conversational — "
-        "like a well-travelled friend giving advice. "
-        "If the user asks a specific question, answer it first, then introduce the recommended places."
+def _build_system_prompt(user_name: str | None) -> str:
+    """
+    Build the system prompt for GuidyTH.
+    `user_name` is the traveller's display name (for personalisation only).
+    The AI persona is always 'GuidyTH' — never pretend to be the user.
+    """
+    prompt = (
+        "You are GuidyTH, a friendly AI travel companion specialising exclusively in "
+        "hidden-gem destinations across Thailand. "
+        "IMPORTANT RULES:\n"
+        "1. You MUST only recommend and discuss places that appear in the "
+        "'Recommended places' list provided in the user message. "
+        "Do NOT mention, suggest, or describe any place that is NOT in that list, "
+        "even if you know about it from your general knowledge.\n"
+        "2. If the user asks about a place or region that is not covered by the "
+        "provided list, politely say you can only help with the places in your "
+        "current database and offer to suggest one of the provided places instead.\n"
+        "3. Keep answers short, natural, and conversational — 3–4 sentences max. "
+        "Always respond in English."
     )
+    # Personalise with the user's name only when it looks like a real name
+    # (not an anonymous UUID such as 'user_abc123').
+    if user_name and not user_name.startswith('user_'):
+        prompt += (
+            f"\nThe traveller's name is {user_name}. "
+            "Address them by name occasionally to make the conversation feel warm and personal."
+        )
+    return prompt
 
 
 def generate_ai_reasons(places: list, user_profile: dict, message: str = "", nickname: str | None = None) -> str:
@@ -236,8 +266,10 @@ def generate_ai_reasons(places: list, user_profile: dict, message: str = "", nic
         f"User's message: \"{message}\"\n\n"
         f"User profile: {user_profile}\n"
         f"{saved_context}\n\n"
-        f"Recommended places:\n{places_context}\n"
-        "Please answer the user's question and explain why these places are a great fit for them. "
+        f"Recommended places (ONLY use these — do NOT mention any other destinations):\n{places_context}\n"
+        "Using ONLY the places listed above, answer the user's question and explain why "
+        "these places are a great fit for them. "
+        "Do not recommend or describe any place not in the list above. "
         "Keep it to 3–4 sentences max, friendly and natural."
     )
 
@@ -249,7 +281,7 @@ def generate_ai_reasons(places: list, user_profile: dict, message: str = "", nic
                 {"role": "user", "content": user_prompt},
             ],
             model="typhoon-v2.5-30b-a3b-instruct",
-            temperature=0.7,
+            temperature=0.3,
         )
         return chat_completion.choices[0].message.content
     except Exception as e:
@@ -288,8 +320,10 @@ def generate_ai_reasons_stream(places: list, user_profile: dict, message: str = 
         f"User's message: \"{message}\"\n\n"
         f"User profile: {user_profile}\n"
         f"{saved_context}\n\n"
-        f"Recommended places:\n{places_context}\n"
-        "Please answer the user's question and explain why these places are a great fit for them. "
+        f"Recommended places (ONLY use these — do NOT mention any other destinations):\n{places_context}\n"
+        "Using ONLY the places listed above, answer the user's question and explain why "
+        "these places are a great fit for them. "
+        "Do not recommend or describe any place not in the list above. "
         "Keep it to 3–4 sentences max, friendly and natural."
     )
 
@@ -301,7 +335,7 @@ def generate_ai_reasons_stream(places: list, user_profile: dict, message: str = 
                 {"role": "user", "content": user_prompt},
             ],
             model="typhoon-v2.5-30b-a3b-instruct",
-            temperature=0.7,
+            temperature=0.3,
             stream=True,
         )
         for chunk in stream:
@@ -319,21 +353,28 @@ def generate_ai_reasons_stream(places: list, user_profile: dict, message: str = 
 def generate_suggested_prompts(places: list, user_profile: dict) -> list:
     """
     Generate follow-up prompt buttons based on top recommended place.
+    Follow-up province prompts use the user's favourite_province when available
+    so suggestions stay relevant to the user's selected regions.
     """
     if not places:
         return []
 
     top_place = places[0]
     name = top_place.get('name', 'this place')
-    province = top_place.get('province', 'this province')
+    rec_province = top_place.get('province', 'this province')
     budget = user_profile.get('budget', 'low')
+
+    # Use user's preferred province for generic follow-ups; fall back to the
+    # recommended place's province only when no preference is set.
+    fav_provinces = user_profile.get('favourite_province', [])
+    explore_province = fav_provinces[0] if fav_provinces else rec_province
 
     prompts = [
         f"How do I get to {name}?",
-        f"What are the best local foods near {province}?",
-        f"Show me more hidden gems in {province}.",
+        f"What are the best local foods near {explore_province}?",
+        f"Show me more hidden gems in {explore_province}.",
         f"Is {name} good for a {budget} budget trip?",
-        "Save this place to my list",        # → frontend จับ keyword นี้เพื่อ trigger save
+        f"Save {name} to my list",           # → frontend detects "Save … to my list"
         "That's all, thanks! 😊",            # → จบการสนทนา
     ]
 
