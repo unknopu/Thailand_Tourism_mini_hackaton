@@ -4,10 +4,9 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     ports:
-      - "1323:1323"
+      - "8000:8000"
     volumes:
-      # Mount source so uvicorn --reload picks up changes immediately
-      - ./backend:/app
+      - ./backend/chroma_db:/app/chroma_db
     env_file:
       - ./backend/.env
     restart: unless-stopped
@@ -17,12 +16,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     ports:
-      - "8000:8000"
-    volumes:
-      # Mount static files so Nginx serves the latest version without rebuilding
-      - ./frontend:/usr/share/nginx/html
-      # Keep the nginx config from the image (not overwritten by the volume above)
-      - ./frontend/nginx.conf:/etc/nginx/conf.d/app.conf:ro
+      - "80:80"
     restart: unless-stopped
     depends_on:
       - backend
