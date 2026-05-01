@@ -13,11 +13,11 @@ setup:
 
 ## Run with auto-reload (development)
 dev:
-	$(UVICORN) app.main:app --reload --port 8000
+	$(UVICORN) main:app --reload --host 0.0.0.0 --port 1323
 
 ## Run without auto-reload (production-like)
 run:
-	$(UVICORN) app.main:app --host 0.0.0.0 --port 8000
+	$(UVICORN) main:app --host 0.0.0.0 --port 1323
 
 ## Build Docker image
 docker-build:
@@ -29,4 +29,4 @@ docker-run:
 
 ## Remove virtualenv
 clean:
-	rm -rf $(VENV) __pycache__ app/__pycache__ app/routers/__pycache__ app/services/__pycache__
+	rm -rf $(VENV) __pycache__ routers/__pycache__ services/__pycache__
