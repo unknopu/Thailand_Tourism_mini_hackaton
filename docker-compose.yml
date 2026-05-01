@@ -7,13 +7,14 @@ services:
       - "8000:8000"
     volumes:
       - ./backend/chroma_db:/app/chroma_db
+      - ./backend/embed_places.py:/app/embed_places.py
     env_file:
       - ./backend/.env
     command: >
       sh -c "
       if [ ! -d /app/chroma_db ] || [ -z \"$(ls -A /app/chroma_db 2>/dev/null)\" ]; then
         echo 'No chroma_db found, running embedding...';
-        python embeded.py;
+        python embed_places.py;
       else
         echo 'chroma_db exists, skipping embedding';
       fi &&
