@@ -589,6 +589,171 @@ body {
 }
 
 /* ══════════════════════════════════════════
+   EDIT PROFILE BUTTON (header)
+══════════════════════════════════════════ */
+.edit-profile-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-family: var(--font);
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: background 0.15s, color 0.15s;
+}
+.edit-profile-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
+.edit-profile-btn.has-profile { border-color: var(--accent); color: var(--accent); }
+.edit-profile-btn.has-profile:hover { background: rgba(16,163,127,0.1); }
+
+/* ══════════════════════════════════════════
+   PROFILE SELECTION MODAL
+══════════════════════════════════════════ */
+.profile-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.75);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+  animation: fadeIn 0.2s ease;
+}
+.profile-backdrop.open { display: flex; }
+
+.profile-modal {
+  background: #2a2a2a;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  width: 100%;
+  max-width: 560px;
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  animation: slideUp 0.25s ease;
+  overflow: hidden;
+}
+
+.profile-modal-header {
+  padding: 28px 28px 20px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.profile-modal-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  background: rgba(16,163,127,0.15);
+  border: 1px solid rgba(16,163,127,0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
+}
+
+.profile-modal-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.profile-modal-sub {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.profile-modal-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+.profile-modal-body::-webkit-scrollbar { width: 6px; }
+.profile-modal-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+.profile-section-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin-bottom: 10px;
+}
+
+.profile-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.profile-chip {
+  padding: 6px 14px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 13.5px;
+  font-family: var(--font);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.profile-chip:hover { border-color: var(--accent); color: var(--text-primary); background: rgba(16,163,127,0.08); }
+.profile-chip.selected { background: var(--accent); border-color: var(--accent); color: #fff; }
+.profile-chip.selected:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+
+.profile-modal-footer {
+  padding: 16px 28px 24px;
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+  display: flex;
+  gap: 10px;
+}
+
+.profile-skip-btn {
+  flex: 0 0 auto;
+  padding: 11px 18px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-family: var(--font);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.profile-skip-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
+
+.profile-save-btn {
+  flex: 1;
+  padding: 11px;
+  background: var(--accent);
+  border: none;
+  border-radius: var(--radius-sm);
+  color: #fff;
+  font-size: 14px;
+  font-family: var(--font);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.profile-save-btn:hover { background: var(--accent-hover); }
+
+/* ══════════════════════════════════════════
    RESPONSIVE
 ══════════════════════════════════════════ */
 @media (max-width: 640px) {

@@ -9,9 +9,17 @@ from repositories import chroma
 router = APIRouter(prefix="/chat", tags=["chat"])
 
 
+class UserProfile(BaseModel):
+    favourite_province: list[str] = []
+    style: list[str] = []
+    food: list[str] = []
+    transportation: list[str] = []
+
+
 class ChatRequest(BaseModel):
     message: str
     conversation_id: str = "default"
+    user_profile: UserProfile = UserProfile()
 
 
 class ChatResponse(BaseModel):
@@ -25,7 +33,7 @@ async def chat(request: ChatRequest):
         raise HTTPException(status_code=400, detail="Message cannot be empty")
 
     try:
-        response_text = await llm.ask(request.message, request.conversation_id)
+        response_text = await llm.ask(request.message, request.conversation_id, request.user_profile.model_dump())
     except openai.AuthenticationError:
         raise HTTPException(status_code=401, detail="Invalid OpenAI API key")
     except openai.RateLimitError:
@@ -44,7 +52,7 @@ async def chat_stream(request: ChatRequest):
 
     async def token_generator():
         try:
-            async for text in llm.ask_stream(request.message, request.conversation_id):
+            async for text in llm.ask_stream(request.message, request.conversation_id, request.user_profile.model_dump()):
                 yield f"data: {text}\n\n"
             yield "data: [DONE]\n\n"
         except openai.APIError as e:

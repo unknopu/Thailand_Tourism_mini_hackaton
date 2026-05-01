@@ -5,30 +5,43 @@
 
 const API_BASE = 'http://localhost:1323/api/v1';
 
+/* ─── Profile options ─── */
+const PROFILE_OPTIONS = {
+  favourite_province: ['กรุงเทพฯ', 'เชียงใหม่', 'เชียงราย', 'ภูเก็ต', 'กระบี่', 'สุราษฎร์ธานี', 'พัทยา', 'ขอนแก่น', 'นครราชสีมา', 'เพชรบุรี', 'ประจวบคีรีขันธ์', 'น่าน', 'อยุธยา', 'กาญจนบุรี'],
+  style:              ['backpacker', 'ธรรมชาติ', 'หรูหรา', 'ผจญภัย', 'วัฒนธรรม', 'ครอบครัว', 'โรแมนติก', 'ถ่ายรูป'],
+  food:               ['ก๋วยเตี๋ยว', 'ซีฟู้ด', 'ส้มตำ', 'ข้าวมันไก่', 'ผัดไทย', 'ลาบ', 'มังสวิรัติ', 'สตรีทฟู้ด', 'อาหารเหนือ', 'อาหารอีสาน'],
+  transportation:     ['รถไฟ', 'เครื่องบิน', 'รถบัส', 'รถยนต์', 'มอเตอร์ไซค์', 'เรือ'],
+};
+
 /* ─── State ─── */
 const state = {
   userId: getOrCreateUserId(),
   conversations: loadConversations(),   // { [id]: { id, title, createdAt } }
   activeId: null,
   streaming: false,
+  userProfile: loadUserProfile(),       // { favourite_province, style, food, transportation }
 };
 
 /* ─── DOM refs ─── */
 const $ = id => document.getElementById(id);
 const dom = {
-  sidebar:         $('sidebar'),
-  sidebarToggle:   $('sidebarToggle'),
-  newChatBtn:      $('newChatBtn'),
-  convList:        $('conversationList'),
-  chatMessages:    $('chatMessages'),
-  welcomeScreen:   $('welcomeScreen'),
-  chatTitleText:   $('chatTitleText'),
-  deleteHistoryBtn:$('deleteHistoryBtn'),
-  messageInput:    $('messageInput'),
-  sendBtn:         $('sendBtn'),
-  modalBackdrop:   $('modalBackdrop'),
-  modalCancel:     $('modalCancel'),
-  modalConfirm:    $('modalConfirm'),
+  sidebar:          $('sidebar'),
+  sidebarToggle:    $('sidebarToggle'),
+  newChatBtn:       $('newChatBtn'),
+  convList:         $('conversationList'),
+  chatMessages:     $('chatMessages'),
+  welcomeScreen:    $('welcomeScreen'),
+  chatTitleText:    $('chatTitleText'),
+  deleteHistoryBtn: $('deleteHistoryBtn'),
+  editProfileBtn:   $('editProfileBtn'),
+  messageInput:     $('messageInput'),
+  sendBtn:          $('sendBtn'),
+  modalBackdrop:    $('modalBackdrop'),
+  modalCancel:      $('modalCancel'),
+  modalConfirm:     $('modalConfirm'),
+  profileBackdrop:  $('profileBackdrop'),
+  profileSaveBtn:   $('profileSaveBtn'),
+  profileSkipBtn:   $('profileSkipBtn'),
 };
 
 /* ══════════════════════════════════════════
@@ -74,6 +87,26 @@ function showError(msg, duration = 4000) {
   el.textContent = msg;
   document.body.appendChild(el);
   setTimeout(() => el.remove(), duration);
+}
+
+function loadUserProfile() {
+  try {
+    return JSON.parse(localStorage.getItem('minichat_user_profile') || 'null');
+  } catch { return null; }
+}
+
+function saveUserProfile(profile) {
+  localStorage.setItem('minichat_user_profile', JSON.stringify(profile));
+  state.userProfile = profile;
+  updateProfileBtn();
+}
+
+function updateProfileBtn() {
+  if (state.userProfile) {
+    dom.editProfileBtn.classList.add('has-profile');
+  } else {
+    dom.editProfileBtn.classList.remove('has-profile');
+  }
 }
 
 /* ══════════════════════════════════════════
@@ -262,10 +295,13 @@ async function sendMessage(text) {
   let accumulated = '';
 
   try {
+    const reqBody = { message: text, conversation_id: convId };
+    if (state.userProfile) reqBody.user_profile = state.userProfile;
+
     const res = await fetch(`${API_BASE}/chat/stream`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: text, conversation_id: convId }),
+      body: JSON.stringify(reqBody),
     });
 
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -374,6 +410,58 @@ async function deleteHistory(id) {
 }
 
 /* ══════════════════════════════════════════
+   PROFILE MODAL
+══════════════════════════════════════════ */
+let profileDraft = {};
+
+function openProfileModal() {
+  profileDraft = state.userProfile
+    ? JSON.parse(JSON.stringify(state.userProfile))
+    : { favourite_province: [], style: [], food: [], transportation: [] };
+  renderAllChips();
+  dom.profileBackdrop.classList.add('open');
+}
+
+function closeProfileModal() {
+  dom.profileBackdrop.classList.remove('open');
+}
+
+function renderAllChips() {
+  renderChipGroup('chipsProvince',  'favourite_province', profileDraft.favourite_province || []);
+  renderChipGroup('chipsStyle',     'style',              profileDraft.style || []);
+  renderChipGroup('chipsFood',      'food',               profileDraft.food || []);
+  renderChipGroup('chipsTransport', 'transportation',     profileDraft.transportation || []);
+}
+
+function renderChipGroup(containerId, key, selected) {
+  const container = $(containerId);
+  container.innerHTML = '';
+  PROFILE_OPTIONS[key].forEach(option => {
+    const chip = document.createElement('button');
+    chip.type = 'button';
+    chip.className = 'profile-chip' + (selected.includes(option) ? ' selected' : '');
+    chip.textContent = option;
+    chip.addEventListener('click', () => {
+      const arr = profileDraft[key] || [];
+      const idx = arr.indexOf(option);
+      if (idx === -1) arr.push(option); else arr.splice(idx, 1);
+      profileDraft[key] = arr;
+      renderChipGroup(containerId, key, arr);
+    });
+    container.appendChild(chip);
+  });
+}
+
+dom.profileSaveBtn.addEventListener('click', () => {
+  saveUserProfile(profileDraft);
+  closeProfileModal();
+});
+
+dom.profileSkipBtn.addEventListener('click', closeProfileModal);
+
+dom.editProfileBtn.addEventListener('click', openProfileModal);
+
+/* ══════════════════════════════════════════
    CONFIRM MODAL
 ══════════════════════════════════════════ */
 let pendingDeleteId = null;
@@ -468,6 +556,7 @@ document.addEventListener('click', e => {
   }
 
   renderConversationList();
+  updateProfileBtn();
 
   // Auto-select most recent conversation if any
   const sorted = Object.values(state.conversations).sort((a, b) => b.createdAt - a.createdAt);
@@ -475,6 +564,11 @@ document.addEventListener('click', e => {
     loadConversation(sorted[0].id);
   } else {
     showWelcome();
+  }
+
+  // Show profile modal on first visit (no profile saved yet)
+  if (!state.userProfile) {
+    openProfileModal();
   }
 
   console.log(`MiniChat AI — User ID: ${state.userId}`);

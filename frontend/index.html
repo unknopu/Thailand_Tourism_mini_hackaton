@@ -44,6 +44,12 @@
         </svg>
       </button>
       <span class="chat-title-text" id="chatTitleText">New Chat</span>
+      <button class="edit-profile-btn" id="editProfileBtn" title="Edit your travel profile">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+        </svg>
+        โปรไฟล์
+      </button>
       <button class="delete-history-btn" id="deleteHistoryBtn" title="Delete chat history" style="display:none">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
@@ -97,6 +103,43 @@
       <div class="modal-actions">
         <button class="modal-btn modal-cancel" id="modalCancel">Cancel</button>
         <button class="modal-btn modal-confirm" id="modalConfirm">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════ PROFILE MODAL ════════════ -->
+  <div class="profile-backdrop" id="profileBackdrop">
+    <div class="profile-modal">
+      <div class="profile-modal-header">
+        <div class="profile-modal-icon">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+          </svg>
+        </div>
+        <h2 class="profile-modal-title">บอกเราเกี่ยวกับคุณ</h2>
+        <p class="profile-modal-sub">เลือกความชอบเพื่อรับคำแนะนำการท่องเที่ยวที่ตรงใจ</p>
+      </div>
+      <div class="profile-modal-body">
+        <div class="profile-section">
+          <div class="profile-section-label">จังหวัดที่ชอบ</div>
+          <div class="profile-chips" id="chipsProvince"></div>
+        </div>
+        <div class="profile-section">
+          <div class="profile-section-label">สไตล์การท่องเที่ยว</div>
+          <div class="profile-chips" id="chipsStyle"></div>
+        </div>
+        <div class="profile-section">
+          <div class="profile-section-label">อาหารที่ชอบ</div>
+          <div class="profile-chips" id="chipsFood"></div>
+        </div>
+        <div class="profile-section">
+          <div class="profile-section-label">การเดินทาง</div>
+          <div class="profile-chips" id="chipsTransport"></div>
+        </div>
+      </div>
+      <div class="profile-modal-footer">
+        <button class="profile-skip-btn" id="profileSkipBtn">ข้ามสำหรับตอนนี้</button>
+        <button class="profile-save-btn" id="profileSaveBtn">บันทึกและเริ่มใช้งาน</button>
       </div>
     </div>
   </div>
